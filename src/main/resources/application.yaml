@@ -1,0 +1,46 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: core-gateway
+  cloud:
+    gateway:
+      default-filters:
+        - StripPrefix=1
+        - PrefixPath=/api
+      routes:
+        - id: default_route
+          uri: lb://core-identity
+          predicates:
+            - Path=/oauth2/**, /oauth2-page/**, /oauth2-admin/**, /login, /logout, /.well-known/**, /userinfo
+          filters:
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 10
+                redis-rate-limiter.burstCapacity: 20
+                redis-rate-limiter.requestedTokens: 1
+                key-resolver: "#{@compositeKeyResolver}"
+  data:
+    redis:
+      host: localhost
+      port: 16379
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: http://auth-server/.well-known/jwks.json
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
+    org.springframework.security: DEBUG
