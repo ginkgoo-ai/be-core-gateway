@@ -7,29 +7,43 @@ spring:
   cloud:
     gateway:
       default-filters:
-        - StripPrefix=1
-        - PrefixPath=/api
+        # Apply rate limit filter globally for all routes
+        - name: RequestRateLimiter
+          args:
+            # Number of tokens refreshed per second
+            redis-rate-limiter.replenishRate: 10
+            # Maximum number of tokens the bucket can hold
+            redis-rate-limiter.burstCapacity: 20
+            # Number of tokens consumed per request
+            redis-rate-limiter.requestedTokens: 1
+            # Reference to the KeyResolver bean
+            key-resolver: "#{@compositeKeyResolver}"
       routes:
-        - id: default_route
-          uri: lb://core-identity
+        # Identity Api Route Configuration
+        - id: api_route
+          uri: http://127.0.0.1:9000
           predicates:
-            - Path=/oauth2/**, /oauth2-page/**, /oauth2-admin/**, /login, /logout, /.well-known/**, /userinfo
+            - Path=/api/oauth2/**, /api/oauth2-admin/**, /api/login, /api/logout, /api/.well-known/**, /api/userinfo
           filters:
-            - name: RequestRateLimiter
-              args:
-                redis-rate-limiter.replenishRate: 10
-                redis-rate-limiter.burstCapacity: 20
-                redis-rate-limiter.requestedTokens: 1
-                key-resolver: "#{@compositeKeyResolver}"
+            - StripPrefix=1
+        
+        # Identity Page Route Configuration
+        - id: page_route
+          uri: ${CORE_IDENTITY_SERVICE}:${CORE_IDENTITY_SERVICE_PORT}
+          predicates:
+            - Path=/oauth2-page/**
+          filters:
+            - StripPrefix=1
+
   data:
     redis:
-      host: localhost
-      port: 16379
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
   security:
     oauth2:
       resourceserver:
         jwt:
-          jwk-set-uri: http://auth-server/.well-known/jwks.json
+          jwk-set-uri: ${CORE_IDENTITY_SERVICE}:${CORE_IDENTITY_SERVICE_PORT}/.well-known/jwks.json
 
 management:
   endpoints:
