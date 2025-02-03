@@ -1,49 +1,50 @@
+authorization-server-uri: ${scheme}://${core_identity_host}:${core_identity_port}
+slate-uri: ${scheme}://${slate_host}:${slate_port}
+authorities-json-path:
+audience:
+
+app:
+  base-uri: ${scheme}://${slate_host}:${slate_port}
+
 server:
-  port: 8080
+  port: ${core_gateway_port}
+  forward-headers-strategy: native
 
 spring:
   application:
     name: core-gateway
   cloud:
     gateway:
-      default-filters:
-        # Apply rate limit filter globally for all routes
-        - name: RequestRateLimiter
-          args:
-            # Number of tokens refreshed per second
-            redis-rate-limiter.replenishRate: 10
-            # Maximum number of tokens the bucket can hold
-            redis-rate-limiter.burstCapacity: 20
-            # Number of tokens consumed per request
-            redis-rate-limiter.requestedTokens: 1
-            # Reference to the KeyResolver bean
-            key-resolver: "#{@compositeKeyResolver}"
-      routes:
-        # Identity Api Route Configuration
-        - id: api_route
-          uri: http://127.0.0.1:9000
-          predicates:
-            - Path=/api/oauth2/**, /api/oauth2-admin/**, /api/login, /api/logout, /api/.well-known/**, /api/userinfo
-          filters:
-            - StripPrefix=1
-        
-        # Identity Page Route Configuration
-        - id: page_route
-          uri: ${CORE_IDENTITY_SERVICE}:${CORE_IDENTITY_SERVICE_PORT}
-          predicates:
-            - Path=/oauth2-page/**
-          filters:
-            - StripPrefix=1
+      mvc:
+        routes:
+          # Identity Api Route Configuration
+          - id: identity_route
+            uri: http://${core_identity_host}:${core_identity_port}
+            predicates:
+              - Path=/api/identity/**
+            filters:
+              - TokenRelay=
+              - StripPrefix=2
 
   data:
     redis:
-      host: ${REDIS_HOST}
-      port: ${REDIS_PORT}
+      host: ${redis_host}
+      port: ${redis_port}
+  
   security:
     oauth2:
-      resourceserver:
-        jwt:
-          jwk-set-uri: ${CORE_IDENTITY_SERVICE}:${CORE_IDENTITY_SERVICE_PORT}/.well-known/jwks.json
+      client:
+        provider:
+          core-identity:
+            issuer-uri: http://${core_identity_host}:${core_identity_port}
+        registration:
+          ginkgoo-web-client:
+            provider: core-identity
+            client-id: ginkgoo-web-client
+            client-secret: ${client_secret}
+            authorization-grant-type: authorization_code
+            redirect-uri: "http://${slate_host}:${core_gateway_port}/login/oauth2/code/{registrationId}"
+            scope: openid,profile,email
 
 management:
   endpoints:
@@ -56,5 +57,8 @@ management:
 
 logging:
   level:
-    org.springframework.cloud.gateway: DEBUG
-    org.springframework.security: DEBUG
+    com.ginkgooai.core.gateway: DEBUG
+    org.springframework.security: TRACE
+    org.springframework.web: TRACE
+    org.springframework.oauth2: TRACE
+    org.springframework.cloud.gateway: TRACE
