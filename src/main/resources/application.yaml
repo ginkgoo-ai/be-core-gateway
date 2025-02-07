@@ -60,3 +60,4 @@ logging:
   level:
     root: debug
     com.ginkgooai: debug
+
