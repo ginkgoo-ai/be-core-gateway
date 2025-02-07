@@ -1,13 +1,12 @@
-authorization-server-uri: ${scheme}://${core_identity_host}:${core_identity_port}
-slate-uri: ${scheme}://${slate_host}:${slate_port}
-authorities-json-path:
-audience:
+core-identity-uri: ${SERVICE_SCHEME}://${CORE_IDENTITY_HOST}:${CORE_IDENTITY_PORT}
+core-gateway-uri: ${SERVICE_SCHEME}://${CORE_GATEWAY_HOST}:${CORE_GATEWAY_PORT}
+slate-uri: ${APP_SCHEME}://${SLATE_HOST}:${SLATE_PORT}
 
 app:
-  base-uri: ${scheme}://${slate_host}:${slate_port}
+  base-uri: ${slate-uri}
 
 server:
-  port: ${core_gateway_port}
+  port: ${CORE_GATEWAY_PORT}
   forward-headers-strategy: native
 
 spring:
@@ -19,7 +18,7 @@ spring:
         routes:
           # Identity Api Route Configuration
           - id: identity_route
-            uri: http://${core_identity_host}:${core_identity_port}
+            uri: ${core-identity-uri}
             predicates:
               - Path=/api/identity/**
             filters:
@@ -28,22 +27,23 @@ spring:
 
   data:
     redis:
-      host: ${redis_host}
-      port: ${redis_port}
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+      password: ${REDIS_PASSWORD}
   
   security:
     oauth2:
       client:
         provider:
           core-identity:
-            issuer-uri: http://${core_identity_host}:${core_identity_port}
+            issuer-uri: ${core-identity-uri}
         registration:
           ginkgoo-web-client:
             provider: core-identity
             client-id: ginkgoo-web-client
-            client-secret: ${client_secret}
+            client-secret: ${CLIENT_SECRET}
             authorization-grant-type: authorization_code
-            redirect-uri: "http://${slate_host}:${core_gateway_port}/login/oauth2/code/{registrationId}"
+            redirect-uri: "${core-gateway-uri}/login/oauth2/code/{registrationId}"
             scope: openid,profile,email
 
 management:
@@ -57,8 +57,8 @@ management:
 
 logging:
   level:
+    root: info
     com.ginkgooai.core.gateway: DEBUG
     org.springframework.security: TRACE
-    org.springframework.web: TRACE
     org.springframework.oauth2: TRACE
     org.springframework.cloud.gateway: TRACE

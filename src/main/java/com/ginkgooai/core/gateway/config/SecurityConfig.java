@@ -109,6 +109,9 @@ public class SecurityConfig {
                                 .logoutUrl("/logout")
                                 .addLogoutHandler(logoutHandler(cookieCsrfTokenRepository))
                                 .logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler(HttpStatus.OK))
+                                .invalidateHttpSession(true)
+                                .deleteCookies("JSESSIONID")
+                                .clearAuthentication(true)
                 )
                 .oauth2Client(oauth2Client ->
                         oauth2Client

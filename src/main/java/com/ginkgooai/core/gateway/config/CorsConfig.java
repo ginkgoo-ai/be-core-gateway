@@ -38,7 +38,7 @@ public class CorsConfig {
 	@Value("${app.base-uri}")
 	private String appBaseUri;
 
-	@Value("${authorization-server-uri}")
+	@Value("${core-identity-uri}")
 	private String identityUri;
 
 	@Bean
