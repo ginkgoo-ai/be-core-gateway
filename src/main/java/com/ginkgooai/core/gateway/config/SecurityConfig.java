@@ -75,22 +75,23 @@ public class SecurityConfig {
         csrfTokenRequestAttributeHandler.setCsrfRequestAttributeName(null);
 
         http
-                .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
-                        .maximumSessions(1)
-                        .sessionRegistry(sessionRegistry())
-                )
-                .authorizeHttpRequests(authorize ->
-                        authorize
-                                .requestMatchers("/logout").permitAll()
-                                .anyRequest().authenticated()
-                )
+                .cors(Customizer.withDefaults())
                 .csrf(csrf ->
                         csrf
                                 .csrfTokenRepository(cookieCsrfTokenRepository)
                                 .csrfTokenRequestHandler(csrfTokenRequestAttributeHandler)
                 )
-                .cors(Customizer.withDefaults())
+                .authorizeHttpRequests(authorize ->
+                        authorize
+                                .requestMatchers("/health").permitAll()
+                                .anyRequest().authenticated()
+                )
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+                        .maximumSessions(1)
+                        .sessionRegistry(sessionRegistry())
+                )
+            
                 .exceptionHandling(exceptionHandling ->
                         exceptionHandling
                                 .authenticationEntryPoint(authenticationEntryPoint())
