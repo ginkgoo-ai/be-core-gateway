@@ -1,0 +1,64 @@
+core-identity-uri: ${SERVICE_SCHEME}://${CORE_IDENTITY_HOST}:${CORE_IDENTITY_PORT}
+core-gateway-uri: ${SERVICE_SCHEME}://${CORE_GATEWAY_HOST}:${CORE_GATEWAY_PORT}
+slate-uri: ${APP_SCHEME}://${SLATE_HOST}:${SLATE_PORT}
+
+app:
+  base-uri: ${slate-uri}
+
+server:
+  port: ${CORE_GATEWAY_PORT}
+  forward-headers-strategy: native
+
+spring:
+  application:
+    name: core-gateway
+  cloud:
+    gateway:
+      mvc:
+        routes:
+          # Identity Api Route Configuration
+          - id: identity_route
+            uri: ${core-identity-uri}
+            predicates:
+              - Path=/api/identity/**
+            filters:
+              - TokenRelay=
+              - StripPrefix=2
+
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+      password: ${REDIS_PASSWORD}
+  
+  security:
+    oauth2:
+      client:
+        provider:
+          core-identity:
+            issuer-uri: ${core-identity-uri}
+        registration:
+          ginkgoo-web-client:
+            provider: core-identity
+            client-id: ginkgoo-web-client
+            client-secret: ${CLIENT_SECRET}
+            authorization-grant-type: authorization_code
+            redirect-uri: "${core-gateway-uri}/login/oauth2/code/{registrationId}"
+            scope: openid,profile,email
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    root: info
+    com.ginkgooai.core.gateway: DEBUG
+    org.springframework.security: TRACE
+    org.springframework.oauth2: TRACE
+    org.springframework.cloud.gateway: TRACE
