@@ -58,8 +58,6 @@ management:
 
 logging:
   level:
-    root: info
-    com.ginkgooai.core.gateway: DEBUG
-    org.springframework.security: TRACE
-    org.springframework.oauth2: TRACE
-    org.springframework.cloud.gateway: TRACE
+    root: debug
+    com.ginkgooai: debug
+
