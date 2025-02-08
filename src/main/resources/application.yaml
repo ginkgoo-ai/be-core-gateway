@@ -58,6 +58,6 @@ management:
 
 logging:
   level:
-    root: debug
-    com.ginkgooai: debug
+    root: ${LOG_LEVEL_ROOT:INFO}
+    com.ginkgooai: ${LOG_LEVEL_GINKGOOAI:DEBUG}
 
