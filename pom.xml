@@ -15,7 +15,7 @@
     <version>1.0.0</version>
 
     <properties>
-        <java.version>22</java.version>
+        <java.version>23</java.version>
         <spring-addons.version>7.8.2</spring-addons.version>
         <spring-cloud.version>2024.0.0</spring-cloud.version>
         <springdoc.version>2.7.0</springdoc.version>
