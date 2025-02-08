@@ -16,6 +16,10 @@
 
     <properties>
         <java.version>23</java.version>
+        <maven.compiler.source>${java.version}</maven.compiler.source>
+        <maven.compiler.target>${java.version}</maven.compiler.target>
+        <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
+        <maven.compiler.proc>full</maven.compiler.proc>
         <spring-addons.version>7.8.2</spring-addons.version>
         <spring-cloud.version>2024.0.0</spring-cloud.version>
         <springdoc.version>2.7.0</springdoc.version>
@@ -25,7 +29,7 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <scope>provided</scope>
+            <version>1.18.36</version>
         </dependency>
         
         <!-- Gateway -->
