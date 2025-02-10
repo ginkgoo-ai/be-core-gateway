@@ -59,5 +59,6 @@ management:
 logging:
   level:
     root: ${LOG_LEVEL_ROOT:INFO}
+    org.springframework.security: ${LOG_LEVEL_SPRING_SECURITY:DEBUG}
     com.ginkgooai: ${LOG_LEVEL_GINKGOOAI:DEBUG}
 
