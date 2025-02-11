@@ -6,7 +6,7 @@ app:
   base-uri: ${slate-uri}
 
 server:
-  port: ${CORE_GATEWAY_PORT}
+  port: 8080
   forward-headers-strategy: native
 
 spring:
