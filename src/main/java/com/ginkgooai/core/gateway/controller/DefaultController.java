@@ -15,9 +15,16 @@
  */
 package com.ginkgooai.core.gateway.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Arrays;
 
 /**
  * @author Joe Grandja
@@ -28,16 +35,84 @@ public class DefaultController {
 
 	@Value("${app.base-uri}")
 	private String appBaseUri;
+	
+	@Value("${app.dev-uris}")
+	private String appDevUrls;
+
+	@GetMapping("/login")
+	public String login(@RequestParam(name = "redirect_uri", required = false) String redirectUri,
+						HttpServletRequest request) {
+		HttpSession session = request.getSession();
+		if (redirectUri != null && isValidRedirectUri(redirectUri)) {
+			session.setAttribute("redirectUri", redirectUri);
+		} else {
+			session.setAttribute("redirectUri", appBaseUri);
+		}
+		return "redirect:/oauth2/authorization/ginkgoo-web-client";
+	}
 
 	@GetMapping("/")
 	public String root() {
 		return "redirect:" + this.appBaseUri;
 	}
 
-	// '/authorized' is the registered 'redirect_uri' for authorization_code
 	@GetMapping("/authorized")
-	public String authorized() {
-		return "redirect:" + this.appBaseUri;
+	public String authorized(HttpServletRequest request) {
+		HttpSession session = request.getSession(false);
+		String redirectUri = appBaseUri;
+
+		if (session != null) {
+			redirectUri = (String) session.getAttribute("redirectUri");
+			session.removeAttribute("redirectUri"); 
+		}
+
+		if (!isValidRedirectUri(redirectUri)) {
+			redirectUri = appBaseUri;
+		}
+
+		return "redirect:" + redirectUri;
 	}
+
+	private boolean isValidRedirectUri(String redirectUri) {
+		if (redirectUri == null) {
+			return false;
+		}
+		try {
+			URI uri = new URI(redirectUri);
+			if (!uri.getScheme().equals("http") && !uri.getScheme().equals("https")) {
+				return false;
+			}
+
+			// Get authority (host:port) from redirect URI
+			String authority = uri.getAuthority();
+
+			// Check against base URI
+			URI baseUri = new URI(appBaseUri);
+			if (authority.equals(baseUri.getAuthority())) {
+				return true;
+			}
+
+			// Check against dev URLs if not empty
+			if (appDevUrls != null && !appDevUrls.trim().isEmpty()) {
+				return Arrays.stream(appDevUrls.split(","))
+						.map(String::trim)
+						.filter(url -> !url.isEmpty())
+						.anyMatch(url -> {
+							try {
+								URI devUri = new URI(url);
+								return authority.equals(devUri.getAuthority());
+							} catch (URISyntaxException e) {
+								return false;
+							}
+						});
+			}
+
+			return false;
+
+		} catch (URISyntaxException e) {
+			return false;
+		}
+	}
+
 
 }

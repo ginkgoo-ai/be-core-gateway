@@ -4,6 +4,7 @@ slate-uri: ${APP_SCHEME}://${SLATE_HOST}:${SLATE_PORT}
 
 app:
   base-uri: ${slate-uri}
+  dev-uris: ${DEV_SLATE_URI}
 
 server:
   port: ${CORE_GATEWAY_PORT}
