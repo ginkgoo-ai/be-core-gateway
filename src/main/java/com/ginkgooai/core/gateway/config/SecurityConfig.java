@@ -83,7 +83,7 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(authorize ->
                         authorize
-                                .requestMatchers("/health").permitAll()
+                                .requestMatchers("/health","/login", "error").permitAll()
                                 .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
@@ -97,12 +97,13 @@ public class SecurityConfig {
                 )
                 .oauth2Login(oauth2Login ->
                         oauth2Login
+                                .loginPage("/login")
                                 .authorizationEndpoint(authorization ->
                                         authorization
                                                 .authorizationRequestResolver(authorizationRequestResolver)
 
                                 )
-                                .successHandler(new SimpleUrlAuthenticationSuccessHandler(this.appBaseUri))
+                                .successHandler(new SimpleUrlAuthenticationSuccessHandler("/authorized"))
                 )
                 .logout(logout ->
                         logout

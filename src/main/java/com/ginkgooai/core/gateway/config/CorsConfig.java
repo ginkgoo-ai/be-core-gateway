@@ -19,6 +19,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
+import org.springframework.util.ObjectUtils;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -36,6 +37,9 @@ public class CorsConfig {
 
 	@Value("${app.base-uri}")
 	private String appBaseUri;
+	
+	@Value("${app.dev-uris}")
+	private String appDevUrls;
 
 	@Value("${core-identity-uri}")
 	private String identityUri;
@@ -48,6 +52,14 @@ public class CorsConfig {
 		origins.add("null");
 		origins.add(appBaseUri);
 		origins.add(identityUri);
+		if (!ObjectUtils.isEmpty(appDevUrls)) {
+			origins.addAll(
+					Arrays.stream(appDevUrls.split(","))
+							.map(String::trim)
+							.filter(url -> !url.isEmpty())
+							.toList()
+			);
+		}
 		config.setAllowedOrigins(origins);
 		
 		config.addAllowedHeader("*");
