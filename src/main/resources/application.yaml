@@ -1,10 +1,9 @@
 core-identity-uri: ${SERVICE_SCHEME}://${CORE_IDENTITY_HOST}:${CORE_IDENTITY_PORT}
 core-gateway-uri: ${SERVICE_SCHEME}://${CORE_GATEWAY_HOST}:${CORE_GATEWAY_PORT}
-slate-uri: ${APP_SCHEME}://${SLATE_HOST}:${SLATE_PORT}
 
 app:
   domain-name: ${APP_DOMAIN}
-  base-uri: ${slate-uri}
+  base-uri: ${SLATE_URI}
   dev-uris: ${DEV_SLATE_URI}
 
 server:
