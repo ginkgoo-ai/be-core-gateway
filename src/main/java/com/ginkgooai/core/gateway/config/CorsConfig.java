@@ -15,6 +15,7 @@
  */
 package com.ginkgooai.core.gateway.config;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -33,6 +34,7 @@ import java.util.List;
  * @since 1.4
  */
 @Configuration(proxyBeanMethods = false)
+@Slf4j
 public class CorsConfig {
 
 	@Value("${app.base-uri}")
@@ -60,6 +62,7 @@ public class CorsConfig {
 							.toList()
 			);
 		}
+		log.debug("Allowed origins: {}", origins);
 		config.setAllowedOrigins(origins);
 		
 		config.addAllowedHeader("*");
