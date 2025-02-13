@@ -45,7 +45,7 @@ spring:
             client-id: ginkgoo-web-client
             client-secret: ${CLIENT_SECRET}
             authorization-grant-type: authorization_code
-            redirect-uri: "${core-gateway-uri}/login/oauth2/code/{registrationId}"
+            redirect-uri: "${AUTH_CLIENT}/login/oauth2/code/{registrationId}"
             scope: openid,profile,email
 
 management:
