@@ -38,7 +38,7 @@ spring:
       client:
         provider:
           core-identity:
-            issuer-uri: ${AUTH_SERVER}
+            issuer-uri: "${AUTH_SERVER}"
         registration:
           ginkgoo-web-client:
             provider: core-identity
