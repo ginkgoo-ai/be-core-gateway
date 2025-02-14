@@ -50,6 +50,7 @@ public class DefaultController {
 		} else {
 			session.setAttribute("redirectUri", appBaseUri);
 		}
+		log.debug("login with redirectUri:{}", redirectUri);
 		return "redirect:/oauth2/authorization/ginkgoo-web-client";
 	}
 
