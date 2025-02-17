@@ -1,5 +1,6 @@
 core-identity-uri: ${SERVICE_SCHEME}://${CORE_IDENTITY_HOST}:${CORE_IDENTITY_PORT}
 core-gateway-uri: ${SERVICE_SCHEME}://${CORE_GATEWAY_HOST}:${CORE_GATEWAY_PORT}
+core-workspace-uri: ${SERVICE_SCHEME}://${CORE_WORKSPACE_HOST}:${CORE_WORKSPACE_PORT}
 
 app:
   domain-name: ${APP_DOMAIN}
@@ -17,6 +18,13 @@ spring:
     gateway:
       mvc:
         routes:
+          # Identity OpenApi Route Configuration
+          - id: identity_openapi_route
+            uri: ${core-identity-uri}
+            predicates:
+              - Path=/api/identity/v3/**
+            filters:
+           
           # Identity Api Route Configuration
           - id: identity_route
             uri: ${core-identity-uri}
@@ -25,7 +33,23 @@ spring:
             filters:
               - TokenRelay=
               - StripPrefix=2
+          
+          # Workspace OpenApi Route Configuration
+          - id: workspace_openapi_route
+            uri: ${core-workspace-uri}
+            predicates:
+              - Path=/api/workspace/v3/**
+            filters:
 
+          # Workspace Api Route Configuration
+          - id: workspace_route
+            uri: ${core-workspace-uri}
+            predicates:
+              - Path=/api/workspace/**
+            filters:
+              - TokenRelay=
+              - StripPrefix=2
+       
   data:
     redis:
       host: ${REDIS_HOST}
@@ -37,7 +61,7 @@ spring:
       client:
         provider:
           core-identity:
-            issuer-uri: "${AUTH_SERVER}"
+            issuer-uri: ${AUTH_SERVER}
         registration:
           ginkgoo-web-client:
             provider: core-identity

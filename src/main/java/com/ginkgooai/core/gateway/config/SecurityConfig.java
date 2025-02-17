@@ -83,7 +83,18 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(authorize ->
                         authorize
-                                .requestMatchers("/health","/login", "error").permitAll()
+                                .requestMatchers(
+                                        "/health",
+                                        "/login",
+                                        "/error",
+                                        // Swagger
+                                        "/api/*/swagger-ui/**",
+                                        "/api/*/swagger-ui.html",
+                                        "/api/*/v3/api-docs/**",
+                                        "/swagger-ui/**",
+                                        "/swagger-ui.html",
+                                        "/v3/api-docs/**"
+                                ).permitAll()
                                 .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
