@@ -123,4 +123,22 @@
             </plugin>
         </plugins>
     </build>
+
+    <distributionManagement>
+        <repository>
+            <id>github</id>
+            <url>https://maven.pkg.github.com/ginkgoo-ai/be-core-packages</url>
+        </repository>
+        <snapshotRepository>
+            <id>github</id>
+            <url>https://maven.pkg.github.com/ginkgoo-ai/be-core-packages</url>
+        </snapshotRepository>
+    </distributionManagement>
+
+    <pluginRepositories>
+        <pluginRepository>
+            <id>github</id>
+            <url>https://maven.pkg.github.com/ginkgoo-ai/be-core-packages</url>
+        </pluginRepository>
+    </pluginRepositories>
 </project>
