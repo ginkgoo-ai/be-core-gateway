@@ -125,7 +125,6 @@ public class SecurityConfig {
                                 .logoutUrl("/logout")
                                 .addLogoutHandler(logoutHandler(cookieCsrfTokenRepository))
 //                                .logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler(HttpStatus.OK))
-
                                 .logoutSuccessHandler(oidcLogoutSuccessHandler(clientRegistrationRepository))
                                 .invalidateHttpSession(true)
                                 .deleteCookies("JSESSIONID")
