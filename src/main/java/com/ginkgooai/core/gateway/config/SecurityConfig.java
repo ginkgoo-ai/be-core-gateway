@@ -1,5 +1,6 @@
 package com.ginkgooai.core.gateway.config;
 
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -11,6 +12,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.core.session.SessionRegistryImpl;
+import org.springframework.security.oauth2.client.oidc.web.logout.OidcClientInitiatedLogoutSuccessHandler;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.client.web.*;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
@@ -20,10 +22,7 @@ import org.springframework.security.web.authentication.DelegatingAuthenticationE
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
-import org.springframework.security.web.authentication.logout.CompositeLogoutHandler;
-import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
-import org.springframework.security.web.authentication.logout.LogoutHandler;
-import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
+import org.springframework.security.web.authentication.logout.*;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfLogoutHandler;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
@@ -31,6 +30,7 @@ import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 
+import java.net.URI;
 import java.util.LinkedHashMap;
 
 @Configuration(proxyBeanMethods = false)
@@ -39,6 +39,12 @@ public class SecurityConfig {
 
     @Value("${app.base-uri}")
     private String appBaseUri;
+
+    @Value("${app.api-uri}")
+    private String apiBaseUri;
+    
+    @Value("${auth-server-uri}")
+    private String authServerUri;
 
     @Bean
     public OAuth2AuthorizationRequestResolver authorizationRequestResolver(
@@ -68,7 +74,8 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http,
-            OAuth2AuthorizationRequestResolver authorizationRequestResolver) throws Exception {
+            OAuth2AuthorizationRequestResolver authorizationRequestResolver,
+            ClientRegistrationRepository clientRegistrationRepository) throws Exception {
 
         CookieCsrfTokenRepository cookieCsrfTokenRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
         CsrfTokenRequestAttributeHandler csrfTokenRequestAttributeHandler = new CsrfTokenRequestAttributeHandler();
@@ -80,20 +87,17 @@ public class SecurityConfig {
                         csrf
                                 .csrfTokenRepository(cookieCsrfTokenRepository)
                                 .csrfTokenRequestHandler(csrfTokenRequestAttributeHandler)
+                                .ignoringRequestMatchers("/logout")
                 )
                 .authorizeHttpRequests(authorize ->
                         authorize
                                 .requestMatchers(
                                         "/health",
                                         "/login",
-                                        "/error",
-                                        // Swagger
-                                        "/api/*/swagger-ui/**",
-                                        "/api/*/swagger-ui.html",
-                                        "/api/*/v3/api-docs/**",
-                                        "/swagger-ui/**",
-                                        "/swagger-ui.html",
-                                        "/v3/api-docs/**"
+                                        "/error"
+//                                         Swagger
+//                                        "/api/*/swagger-ui/**",
+//                                        "/api/*/v3/api-docs"
                                 ).permitAll()
                                 .anyRequest().authenticated()
                 )
@@ -120,9 +124,12 @@ public class SecurityConfig {
                         logout
                                 .logoutUrl("/logout")
                                 .addLogoutHandler(logoutHandler(cookieCsrfTokenRepository))
-                                .logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler(HttpStatus.OK))
+//                                .logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler(HttpStatus.OK))
+
+                                .logoutSuccessHandler(oidcLogoutSuccessHandler(clientRegistrationRepository))
                                 .invalidateHttpSession(true)
                                 .deleteCookies("JSESSIONID")
+                                .deleteCookies("SESSION")
                                 .clearAuthentication(true)
                 )
                 .oauth2Client(oauth2Client ->
@@ -158,5 +165,14 @@ public class SecurityConfig {
         return new CompositeLogoutHandler(
                 new SecurityContextLogoutHandler(),
                 new CsrfLogoutHandler(csrfTokenRepository));
+    }
+
+    private LogoutSuccessHandler oidcLogoutSuccessHandler(ClientRegistrationRepository clientRegistrationRepository) {
+        OidcClientInitiatedLogoutSuccessHandler oidcLogoutSuccessHandler =
+                new OidcClientInitiatedLogoutSuccessHandler(clientRegistrationRepository);
+
+        oidcLogoutSuccessHandler.setPostLogoutRedirectUri(URI.create(appBaseUri).toString());
+        
+        return oidcLogoutSuccessHandler;
     }
 }

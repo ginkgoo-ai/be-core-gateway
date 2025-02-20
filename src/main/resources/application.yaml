@@ -1,14 +1,16 @@
 core-identity-uri: ${SERVICE_SCHEME}://${CORE_IDENTITY_HOST}:${CORE_IDENTITY_PORT}
 core-gateway-uri: ${SERVICE_SCHEME}://${CORE_GATEWAY_HOST}:${CORE_GATEWAY_PORT}
 core-workspace-uri: ${SERVICE_SCHEME}://${CORE_WORKSPACE_HOST}:${CORE_WORKSPACE_PORT}
+auth-server-uri: ${AUTH_SERVER}
 
 app:
   domain-name: ${APP_DOMAIN}
   base-uri: ${SLATE_URI}
+  api-uri: ${AUTH_CLIENT}
   dev-uris: ${DEV_SLATE_URI}
 
 server:
-  port: 8080
+  port: ${CORE_GATEWAY_PORT}
   forward-headers-strategy: native
 
 spring:
@@ -22,7 +24,7 @@ spring:
           - id: identity_openapi_route
             uri: ${core-identity-uri}
             predicates:
-              - Path=/api/identity/v3/**
+              - Path=/api/identity/v3/**, /api/identity/swagger-ui/**
             filters:
            
           # Identity Api Route Configuration
@@ -38,7 +40,7 @@ spring:
           - id: workspace_openapi_route
             uri: ${core-workspace-uri}
             predicates:
-              - Path=/api/workspace/v3/**
+              - Path=/api/workspace/v3/**,/api/workspace/swagger-ui/**
             filters:
 
           # Workspace Api Route Configuration
@@ -80,6 +82,21 @@ management:
   health:
     ldap:
       enabled: false
+      
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: true
+    config-url: /v3/api-docs/swagger-config
+    urls:
+      - name: core-gateway-service
+        url: /v3/api-docs
+      - name: core-identity-service
+        url: /api/identity/v3/api-docs
+      - name: core-workspace-service
+        url: /api/workspace/v3/api-docs
 
 logging:
   level:
