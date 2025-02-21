@@ -1,6 +1,5 @@
 package com.ginkgooai.core.gateway.config;
 
-import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -49,14 +48,10 @@ public class SecurityConfig {
     @Bean
     public OAuth2AuthorizationRequestResolver authorizationRequestResolver(
             ClientRegistrationRepository clientRegistrationRepository) {
-        DefaultOAuth2AuthorizationRequestResolver resolver =
-                new DefaultOAuth2AuthorizationRequestResolver(
-                        clientRegistrationRepository,
-                        "/oauth2/authorization");
+        DefaultOAuth2AuthorizationRequestResolver resolver = new DefaultOAuth2AuthorizationRequestResolver(clientRegistrationRepository, "/oauth2/authorization");
 
         // Enable PKCE
-        resolver.setAuthorizationRequestCustomizer(
-                OAuth2AuthorizationRequestCustomizers.withPkce());
+        resolver.setAuthorizationRequestCustomizer(OAuth2AuthorizationRequestCustomizers.withPkce());
 
         return resolver;
     }
@@ -72,10 +67,9 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(
-            HttpSecurity http,
-            OAuth2AuthorizationRequestResolver authorizationRequestResolver,
-            ClientRegistrationRepository clientRegistrationRepository) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http,
+                                                   OAuth2AuthorizationRequestResolver authorizationRequestResolver,
+                                                   ClientRegistrationRepository clientRegistrationRepository) throws Exception {
 
         CookieCsrfTokenRepository cookieCsrfTokenRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
         CsrfTokenRequestAttributeHandler csrfTokenRequestAttributeHandler = new CsrfTokenRequestAttributeHandler();
@@ -94,10 +88,11 @@ public class SecurityConfig {
                                 .requestMatchers(
                                         "/health",
                                         "/login",
-                                        "/error"
+                                        "/error",
 //                                         Swagger
-//                                        "/api/*/swagger-ui/**",
-//                                        "/api/*/v3/api-docs"
+                                        "/swagger-ui/**",
+                                        "/v3/api-docs/**",
+                                        "/api/*/v3/api-docs/**"
                                 ).permitAll()
                                 .anyRequest().authenticated()
                 )
