@@ -1,6 +1,7 @@
 core-identity-uri: ${SERVICE_SCHEME}://${CORE_IDENTITY_HOST}:${CORE_IDENTITY_PORT}
 core-gateway-uri: ${SERVICE_SCHEME}://${CORE_GATEWAY_HOST}:${CORE_GATEWAY_PORT}
 core-workspace-uri: ${SERVICE_SCHEME}://${CORE_WORKSPACE_HOST}:${CORE_WORKSPACE_PORT}
+core-project-uri: ${SERVICE_SCHEME}://${CORE_PROJECT_HOST}:${CORE_PROJECT_PORT}
 auth-server-uri: ${AUTH_SERVER}
 
 app:
@@ -51,6 +52,22 @@ spring:
             filters:
               - TokenRelay=
               - StripPrefix=2
+              
+          # Project OpenApi Route Configuration
+          - id: project_openapi_route
+            uri: ${core-project-uri}
+            predicates:
+              - Path=/api/project/v3/**,/api/project/swagger-ui/**
+            filters:
+
+          # Project Api Route Configuration
+          - id: project_route
+            uri: ${core-project-uri}
+            predicates:
+              - Path=/api/project/**
+            filters:
+              - TokenRelay=
+              - StripPrefix=2
        
   data:
     redis:
@@ -89,6 +106,8 @@ springdoc:
     path: /v3/api-docs
   swagger-ui:
     enabled: true
+    csrf:
+      enabled: true
     config-url: /v3/api-docs/swagger-config
     urls:
       - name: core-gateway-service
@@ -97,6 +116,8 @@ springdoc:
         url: /api/identity/v3/api-docs
       - name: core-workspace-service
         url: /api/workspace/v3/api-docs
+      - name: core-project-service
+        url: /api/project/v3/api-docs
 
 logging:
   level:

@@ -11,7 +11,7 @@
     </parent>
 
     <groupId>com.ginkgoo-ai</groupId>
-    <artifactId>core-gateway</artifactId>
+    <artifactId>be-core-gateway</artifactId>
     <version>1.0.0</version>
 
     <properties>
