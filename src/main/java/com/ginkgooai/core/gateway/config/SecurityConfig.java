@@ -36,7 +36,8 @@ import java.util.LinkedHashMap;
 @EnableWebSecurity
 public class SecurityConfig {
 
-    @Value("${app.base-uri}")
+//    @Value("${app.base-uri}")
+    @Value("${AUTH_CLIENT}")
     private String appBaseUri;
 
     @Value("${app.api-uri}")
