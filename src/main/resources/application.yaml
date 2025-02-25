@@ -68,6 +68,22 @@ spring:
             filters:
               - TokenRelay=
               - StripPrefix=2
+
+          # Storage OpenApi Route Configuration
+          - id: storage_openapi_route
+            uri: ${core-storage-uri}
+            predicates:
+              - Path=/api/storage/v3/**, /api/storage/swagger-ui/**
+            filters:
+
+          # Storage Api Route Configuration
+          - id: storage_route
+            uri: ${core-storage-uri}
+            predicates:
+              - Path=/api/storage/**
+            filters:
+              - TokenRelay=
+              - StripPrefix=2
        
   data:
     redis:
