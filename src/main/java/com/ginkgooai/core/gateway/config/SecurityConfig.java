@@ -78,12 +78,13 @@ public class SecurityConfig {
 
         http
                 .cors(Customizer.withDefaults())
-                .csrf(csrf ->
-                        csrf
-                                .csrfTokenRepository(cookieCsrfTokenRepository)
-                                .csrfTokenRequestHandler(csrfTokenRequestAttributeHandler)
-                                .ignoringRequestMatchers("/logout")
-                )
+                .csrf(csrf -> csrf.disable())
+//                .csrf(csrf ->
+//                        csrf
+//                                .csrfTokenRepository(cookieCsrfTokenRepository)
+//                                .csrfTokenRequestHandler(csrfTokenRequestAttributeHandler)
+//                                .ignoringRequestMatchers("/logout")
+//                )
                 .authorizeHttpRequests(authorize ->
                         authorize
                                 .requestMatchers(
