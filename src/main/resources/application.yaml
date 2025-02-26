@@ -2,6 +2,7 @@ core-identity-uri: ${SERVICE_SCHEME}://${CORE_IDENTITY_HOST}:${CORE_IDENTITY_POR
 core-gateway-uri: ${SERVICE_SCHEME}://${CORE_GATEWAY_HOST}:${CORE_GATEWAY_PORT}
 core-workspace-uri: ${SERVICE_SCHEME}://${CORE_WORKSPACE_HOST}:${CORE_WORKSPACE_PORT}
 core-project-uri: ${SERVICE_SCHEME}://${CORE_PROJECT_HOST}:${CORE_PROJECT_PORT}
+core-storage-uri: ${SERVICE_SCHEME}://${CORE_STORAGE_HOST}:${CORE_STORAGE_PORT}
 auth-server-uri: ${AUTH_SERVER}
 
 app:
@@ -65,6 +66,22 @@ spring:
             uri: ${core-project-uri}
             predicates:
               - Path=/api/project/**
+            filters:
+              - TokenRelay=
+              - StripPrefix=2
+
+          # Storage OpenApi Route Configuration
+          - id: storage_openapi_route
+            uri: ${core-storage-uri}
+            predicates:
+              - Path=/api/storage/v3/**, /api/storage/swagger-ui/**
+            filters:
+
+          # Storage Api Route Configuration
+          - id: storage_route
+            uri: ${core-storage-uri}
+            predicates:
+              - Path=/api/storage/**
             filters:
               - TokenRelay=
               - StripPrefix=2
