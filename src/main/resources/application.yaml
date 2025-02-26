@@ -135,6 +135,8 @@ springdoc:
         url: /api/workspace/v3/api-docs
       - name: core-project-service
         url: /api/project/v3/api-docs
+      - name: core-storage-service
+        url: /api/storage/v3/api-docs
 
 logging:
   level:
