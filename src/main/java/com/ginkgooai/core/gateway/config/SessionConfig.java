@@ -23,7 +23,7 @@ public class SessionConfig {
         serializer.setSameSite("None");
         // Set to true if using HTTPS
         serializer.setUseSecureCookie(true);
-        serializer.setDomainName(domainName);
+//        serializer.setDomainName(domainName);
         serializer.setCookiePath("/");
         return serializer;
     }
