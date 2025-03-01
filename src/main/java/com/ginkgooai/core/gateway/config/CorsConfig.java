@@ -67,7 +67,7 @@ public class CorsConfig {
 		
 		config.addAllowedHeader("*");
 		config.addAllowedHeader(HttpHeaders.CONTENT_TYPE);
-		config.setAllowedMethods(Arrays.asList("GET", "HEAD", "POST", "PUT", "DELETE", "OPTIONS"));
+		config.setAllowedMethods(Arrays.asList("GET", "HEAD", "POST", "PUT", "DELETE", "OPTIONS","PATCH"));
 		config.setAllowCredentials(true);
 		config.setMaxAge(3600L);
 
