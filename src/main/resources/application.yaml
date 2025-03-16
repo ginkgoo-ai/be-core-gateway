@@ -14,6 +14,9 @@ app:
 server:
   port: ${CORE_GATEWAY_PORT}
   forward-headers-strategy: native
+  servlet:
+    session:
+      timeout: 1D
 
 spring:
   application:
