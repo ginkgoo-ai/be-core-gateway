@@ -16,4 +16,3 @@ COPY integration/grafana-opentelemetry-java-v2.12.0.jar ./grafana-opentelemetry-
 
 CMD ["java", "-Xms128m", "-Xmx1024m", "-javaagent:grafana-opentelemetry-java-v2.12.0.jar", "-jar", "app.jar"]
 
-
