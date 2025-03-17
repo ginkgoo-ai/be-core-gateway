@@ -1,5 +1,9 @@
 package com.ginkgooai.core.gateway.config;
 
+import com.ginkgooai.core.gateway.filter.GuestCodeAuthenticationFilter;
+import com.ginkgooai.core.gateway.security.GuestCodeAuthorizationRequestResolver;
+import com.ginkgooai.core.gateway.security.GuestCodeGrantRequestEntityConverter;
+import com.ginkgooai.core.gateway.security.GuestCodeTokenResponseClient;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -11,16 +15,17 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.core.session.SessionRegistryImpl;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
+import org.springframework.security.oauth2.client.endpoint.DefaultAuthorizationCodeTokenResponseClient;
+import org.springframework.security.oauth2.client.endpoint.OAuth2AccessTokenResponseClient;
+import org.springframework.security.oauth2.client.endpoint.OAuth2AuthorizationCodeGrantRequest;
 import org.springframework.security.oauth2.client.oidc.web.logout.OidcClientInitiatedLogoutSuccessHandler;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.client.web.*;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.DelegatingAuthenticationEntryPoint;
-import org.springframework.security.web.authentication.HttpStatusEntryPoint;
-import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
-import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
+import org.springframework.security.web.authentication.*;
 import org.springframework.security.web.authentication.logout.*;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfLogoutHandler;
@@ -36,9 +41,11 @@ import java.util.LinkedHashMap;
 @EnableWebSecurity
 public class SecurityConfig {
 
-//    @Value("${app.base-uri}")
     @Value("${AUTH_CLIENT}")
     private String appBaseUri;
+
+    @Value("${app.domain-name}")
+    private String domainName;
 
     @Value("${app.api-uri}")
     private String apiBaseUri;
@@ -52,7 +59,7 @@ public class SecurityConfig {
         DefaultOAuth2AuthorizationRequestResolver resolver = new DefaultOAuth2AuthorizationRequestResolver(clientRegistrationRepository, "/oauth2/authorization");
 
         // Enable PKCE
-        resolver.setAuthorizationRequestCustomizer(OAuth2AuthorizationRequestCustomizers.withPkce());
+//        resolver.setAuthorizationRequestCustomizer(OAuth2AuthorizationRequestCustomizers.withPkce());
 
         return resolver;
     }
@@ -70,11 +77,22 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http,
                                                    OAuth2AuthorizationRequestResolver authorizationRequestResolver,
-                                                   ClientRegistrationRepository clientRegistrationRepository) throws Exception {
+                                                   ClientRegistrationRepository clientRegistrationRepository,
+                                                   OAuth2AuthorizedClientService authorizedClientService) throws Exception {
 
         CookieCsrfTokenRepository cookieCsrfTokenRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
+        cookieCsrfTokenRepository.setCookieCustomizer(cookie -> cookie.domain(domainName));
         CsrfTokenRequestAttributeHandler csrfTokenRequestAttributeHandler = new CsrfTokenRequestAttributeHandler();
         csrfTokenRequestAttributeHandler.setCsrfRequestAttributeName(null);
+
+        GuestCodeTokenResponseClient tokenResponseClient = new GuestCodeTokenResponseClient();
+
+        GuestCodeAuthenticationFilter guestCodeFilter = new GuestCodeAuthenticationFilter(
+                clientRegistrationRepository,
+                authorizedClientService,
+                tokenResponseClient,
+                "ginkgoo-web-client",
+                appBaseUri);
 
         http
                 .cors(Customizer.withDefaults())
@@ -96,12 +114,14 @@ public class SecurityConfig {
                                         "/v3/api-docs/**",
                                         "/api/*/v3/api-docs/**"
                                 ).permitAll()
+                                .requestMatchers("/oauth2/guest").permitAll() // Allow guest code entry point
                                 .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
                         .maximumSessions(1)
                         .sessionRegistry(sessionRegistry())
+                        .maxSessionsPreventsLogin(false)
                 )
                 .exceptionHandling(exceptionHandling ->
                         exceptionHandling
@@ -112,8 +132,15 @@ public class SecurityConfig {
                                 .loginPage("/login")
                                 .authorizationEndpoint(authorization ->
                                         authorization
-                                                .authorizationRequestResolver(authorizationRequestResolver)
+                                                .authorizationRequestResolver(new GuestCodeAuthorizationRequestResolver(
+                                                        clientRegistrationRepository,
+                                                        "/oauth2/authorization",
+                                                        "ginkgoo-web-client"
+                                                ))
 
+                                )
+                                .tokenEndpoint(token -> token
+                                        .accessTokenResponseClient(accessTokenResponseClient())
                                 )
                                 .successHandler(new SimpleUrlAuthenticationSuccessHandler("/authorized"))
                 )
@@ -135,9 +162,17 @@ public class SecurityConfig {
                                                 .authorizationRequestResolver(authorizationRequestResolver)
                                                 .authorizationRequestRepository(authorizationRequestRepository())
                                 )
-                );
+                )
+                .addFilterBefore(guestCodeFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    @Bean
+    public OAuth2AccessTokenResponseClient<OAuth2AuthorizationCodeGrantRequest> accessTokenResponseClient() {
+        DefaultAuthorizationCodeTokenResponseClient client = new DefaultAuthorizationCodeTokenResponseClient();
+        client.setRequestEntityConverter(new GuestCodeGrantRequestEntityConverter());
+        return client;
     }
 
     private AuthenticationEntryPoint authenticationEntryPoint() {
