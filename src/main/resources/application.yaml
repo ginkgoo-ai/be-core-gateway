@@ -3,6 +3,8 @@ core-gateway-uri: ${SERVICE_SCHEME}://${CORE_GATEWAY_HOST}:${CORE_GATEWAY_PORT}
 core-workspace-uri: ${SERVICE_SCHEME}://${CORE_WORKSPACE_HOST}:${CORE_WORKSPACE_PORT}
 core-project-uri: ${SERVICE_SCHEME}://${CORE_PROJECT_HOST}:${CORE_PROJECT_PORT}
 core-storage-uri: ${SERVICE_SCHEME}://${CORE_STORAGE_HOST}:${CORE_STORAGE_PORT}
+core-ai-uri: ${SERVICE_SCHEME}://${CORE_AI_HOST}:${CORE_AI_PORT}
+
 auth-server-uri: ${AUTH_SERVER}
 
 app:
@@ -92,6 +94,15 @@ spring:
             uri: ${core-storage-uri}
             predicates:
               - Path=/api/storage/**
+            filters:
+              - TokenRelay=
+              - StripPrefix=2
+
+          # Storage Api Route Configuration
+          - id: ai-route
+            uri: ${core-ai-uri}
+            predicates:
+              - Path=/api/ai/**
             filters:
               - TokenRelay=
               - StripPrefix=2
