@@ -1,5 +1,6 @@
 package com.ginkgooai.core.gateway.security;
 
+import com.ginkgooai.core.common.security.CustomGrantTypes;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.RequestEntity;
@@ -38,7 +39,7 @@ public class GuestCodeGrantRequestEntityConverter implements
         if (StringUtils.hasText(guestCode) && StringUtils.hasText(resourceId)) {
             // This is a guest code request, create custom token request
             MultiValueMap<String, String> parameters = new LinkedMultiValueMap<>();
-            parameters.add(OAuth2ParameterNames.GRANT_TYPE, "urn:ietf:params:oauth:grant-type:guest_code");
+            parameters.add(OAuth2ParameterNames.GRANT_TYPE, CustomGrantTypes.GUEST_CODE.getValue());
             parameters.add("guest_code", guestCode);
             parameters.add("resource_id", resourceId);
             
