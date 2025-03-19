@@ -9,7 +9,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -27,6 +29,10 @@ import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.*;
 import org.springframework.security.web.authentication.logout.*;
+import org.springframework.security.web.authentication.session.ChangeSessionIdAuthenticationStrategy;
+import org.springframework.security.web.authentication.session.CompositeSessionAuthenticationStrategy;
+import org.springframework.security.web.authentication.session.ConcurrentSessionControlAuthenticationStrategy;
+import org.springframework.security.web.authentication.session.RegisterSessionAuthenticationStrategy;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfLogoutHandler;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
@@ -35,13 +41,14 @@ import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 
 import java.net.URI;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 
 @Configuration(proxyBeanMethods = false)
 @EnableWebSecurity
 public class SecurityConfig {
 
-    @Value("${AUTH_CLIENT}")
+    @Value("${app.base-uri}")
     private String appBaseUri;
 
     @Value("${app.domain-name}")
@@ -76,6 +83,7 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http,
+                                                   AuthenticationConfiguration authenticationConfiguration,
                                                    OAuth2AuthorizationRequestResolver authorizationRequestResolver,
                                                    ClientRegistrationRepository clientRegistrationRepository,
                                                    OAuth2AuthorizedClientService authorizedClientService) throws Exception {
@@ -93,6 +101,17 @@ public class SecurityConfig {
                 tokenResponseClient,
                 "ginkgoo-web-client",
                 appBaseUri);
+
+//        AuthenticationManager authenticationManager = authenticationConfiguration.getAuthenticationManager();
+
+//        guestCodeFilter.setAuthenticationManager(authenticationManager);
+//        guestCodeFilter.setSessionAuthenticationStrategy(
+//                new CompositeSessionAuthenticationStrategy(Arrays.asList(
+//                        new ConcurrentSessionControlAuthenticationStrategy(sessionRegistry()),
+//                        new ChangeSessionIdAuthenticationStrategy(),
+//                        new RegisterSessionAuthenticationStrategy(sessionRegistry())
+//                ))
+//        );
 
         http
                 .cors(Customizer.withDefaults())

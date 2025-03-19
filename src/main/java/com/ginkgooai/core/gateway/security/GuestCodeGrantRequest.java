@@ -1,5 +1,6 @@
 package com.ginkgooai.core.gateway.security;
 
+import com.ginkgooai.core.common.security.CustomGrantTypes;
 import org.springframework.security.oauth2.client.endpoint.AbstractOAuth2AuthorizationGrantRequest;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
@@ -13,8 +14,7 @@ import java.util.Map;
  */
 public class GuestCodeGrantRequest extends AbstractOAuth2AuthorizationGrantRequest {
     
-    private static final AuthorizationGrantType GUEST_CODE_GRANT_TYPE = 
-            new AuthorizationGrantType("urn:ietf:params:oauth:grant-type:guest_code");
+    private static final AuthorizationGrantType GUEST_CODE_GRANT_TYPE = CustomGrantTypes.GUEST_CODE;
     
     private final String guestCode;
     private final String resourceId;
