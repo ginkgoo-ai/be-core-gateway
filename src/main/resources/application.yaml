@@ -98,7 +98,14 @@ spring:
               - TokenRelay=
               - StripPrefix=2
 
-          # Storage Api Route Configuration
+          # Ai OpenApi Route Configuration
+          - id: storage_openapi_route
+            uri: ${core-ai-uri}
+            predicates:
+              - Path=/api/ai/v3/**, /api/ai/swagger-ui/**
+            filters:
+
+          # Ai Api Route Configuration
           - id: ai-route
             uri: ${core-ai-uri}
             predicates:
@@ -158,6 +165,8 @@ springdoc:
         url: /api/project/v3/api-docs
       - name: core-storage-service
         url: /api/storage/v3/api-docs
+      - name: core-ai-service
+        url: /api/ai/v3/api-docs
 
 logging:
   level:
