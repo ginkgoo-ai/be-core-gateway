@@ -35,7 +35,7 @@ public class GuestCodeAuthenticationFilter extends AbstractAuthenticationProcess
     private final OAuth2AuthorizedClientService authorizedClientService;
     private final GuestCodeTokenResponseClient tokenResponseClient;
     private final String clientRegistrationId;
-    private final String redirectUri;
+    private final String defaultRedirectUri;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public GuestCodeAuthenticationFilter(
@@ -43,17 +43,26 @@ public class GuestCodeAuthenticationFilter extends AbstractAuthenticationProcess
             OAuth2AuthorizedClientService authorizedClientService,
             GuestCodeTokenResponseClient tokenResponseClient,
             String clientRegistrationId,
-            String redirectUri) {
+            String defaultRedirectUri) {
         super(new AntPathRequestMatcher("/oauth2/guest"));
         this.clientRegistrationRepository = clientRegistrationRepository;
         this.authorizedClientService = authorizedClientService;
         this.tokenResponseClient = tokenResponseClient;
         this.clientRegistrationId = clientRegistrationId;
-        this.redirectUri = redirectUri;
+        this.defaultRedirectUri = defaultRedirectUri;
 
 
         setAuthenticationSuccessHandler((request, response, authentication) -> {
-            response.sendRedirect(redirectUri != null ? redirectUri : "http://127.0.0.1:3000");
+            String redirectUri = defaultRedirectUri;
+            if (authentication instanceof OAuth2AuthenticationToken oauth2Auth) {
+                OAuth2User oauth2User = oauth2Auth.getPrincipal();
+                Map<String, Object> attributes = oauth2User.getAttributes();
+
+                if (attributes.containsKey("redirect_url")) {
+                    redirectUri = (String) attributes.get("redirect_url");
+                }
+            }
+            response.sendRedirect(redirectUri);
         });
         
         setAuthenticationFailureHandler((request, response, exception) -> {
