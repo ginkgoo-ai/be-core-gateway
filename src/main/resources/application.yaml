@@ -80,7 +80,7 @@ spring:
               - Path=/api/project/**
             filters:
               - TokenRelay=
-              - RewritePath=/api/project/(?<remaining>.*), /api/$\{remaining}
+              - StripPrefix=2
 
           # Storage OpenApi Route Configuration
           - id: storage_openapi_route
