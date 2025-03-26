@@ -221,7 +221,7 @@ public class SecurityConfig {
         OidcClientInitiatedLogoutSuccessHandler oidcLogoutSuccessHandler =
                 new OidcClientInitiatedLogoutSuccessHandler(clientRegistrationRepository);
 
-        oidcLogoutSuccessHandler.setPostLogoutRedirectUri(URI.create(appBaseUri).toString());
+        oidcLogoutSuccessHandler.setPostLogoutRedirectUri(URI.create(apiBaseUri).toString());
         
         return oidcLogoutSuccessHandler;
     }
