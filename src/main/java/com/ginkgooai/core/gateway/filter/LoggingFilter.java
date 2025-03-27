@@ -13,8 +13,12 @@ import org.springframework.web.util.ContentCachingResponseWrapper;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Component
 @Order(1)
@@ -24,6 +28,15 @@ public class LoggingFilter implements Filter {
             "application/json",
             "application/json;charset=UTF-8",
             "application/json;charset=utf-8"
+    );
+
+    private static final List<String> STREAM_CONTENT_TYPES = Arrays.asList(
+            "application/octet-stream",
+            "application/pdf",
+            "image/",
+            "video/",
+            "audio/",
+            "multipart/form-data"
     );
 
     private static final List<String> EXCLUDE_PATHS = Arrays.asList(
@@ -39,14 +52,24 @@ public class LoggingFilter implements Filter {
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
         HttpServletRequest httpRequest = (HttpServletRequest) request;
+        HttpServletResponse httpResponse = (HttpServletResponse) response;
 
         if (shouldExclude(httpRequest.getRequestURI())) {
             chain.doFilter(request, response);
             return;
         }
 
+        // 保存原始响应头
+        Map<String, List<String>> originalHeaders = new HashMap<>();
+        Collection<String> headerNames = httpResponse.getHeaderNames();
+        if (headerNames != null) {
+            for (String headerName : headerNames) {
+                originalHeaders.put(headerName, new ArrayList<>(httpResponse.getHeaders(headerName)));
+            }
+        }
+
         ContentCachingRequestWrapper requestWrapper = new ContentCachingRequestWrapper(httpRequest);
-        ContentCachingResponseWrapper responseWrapper = new ContentCachingResponseWrapper((HttpServletResponse) response);
+        ContentCachingResponseWrapper responseWrapper = new ContentCachingResponseWrapper(httpResponse);
 
         long startTime = System.currentTimeMillis();
         try {
@@ -55,6 +78,21 @@ public class LoggingFilter implements Filter {
             logApiInfo(requestWrapper, responseWrapper, System.currentTimeMillis() - startTime);
         } finally {
             responseWrapper.copyBodyToResponse();
+            
+            // 清除所有现有的响应头
+            headerNames = httpResponse.getHeaderNames();
+            if (headerNames != null) {
+                for (String headerName : headerNames) {
+                    httpResponse.setHeader(headerName, null);
+                }
+            }
+            
+            // 恢复原始响应头
+            originalHeaders.forEach((headerName, headerValues) -> {
+                for (String headerValue : headerValues) {
+                    httpResponse.addHeader(headerName, headerValue);
+                }
+            });
         }
     }
 
@@ -65,7 +103,7 @@ public class LoggingFilter implements Filter {
     private void logApiInfo(ContentCachingRequestWrapper request, ContentCachingResponseWrapper response, long timeElapsed) {
         try {
             String requestBody = getRequestBody(request);
-            String responseBody = getResponseBody(response);
+            String responseBody = isStreamContent(response.getContentType()) ? "[Stream Response Size : " + response.getContentSize() : getResponseBody(response);
 
             log.info("API Call - {} {} - Status: {} - Time: {}ms\nRequest: {}\nResponse: {}",
                     request.getMethod(),
@@ -123,5 +161,12 @@ public class LoggingFilter implements Filter {
         } catch (Exception e) {
             return content;
         }
+    }
+
+    private boolean isStreamContent(String contentType) {
+        if (contentType == null) return false;
+        String lowerContentType = contentType.toLowerCase();
+        return STREAM_CONTENT_TYPES.stream()
+                .anyMatch(lowerContentType::startsWith);
     }
 }
