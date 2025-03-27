@@ -17,6 +17,14 @@ import java.util.*;
 @Slf4j
 public class CaseInsensitiveResponseHeaderFilter implements Filter {
 
+    private static final Set<String> CORS_HEADERS = Set.of(
+            "access-control-allow-origin",
+            "access-control-allow-methods",
+            "access-control-allow-headers",
+            "access-control-allow-credentials",
+            "access-control-max-age"
+    );
+
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
         if (response instanceof HttpServletResponse) {
@@ -50,10 +58,18 @@ public class CaseInsensitiveResponseHeaderFilter implements Filter {
             // 使用setHeader而不是addHeader来设置响应头
             dedupedHeaders.forEach((headerName, values) -> {
                 if (!values.isEmpty()) {
-                    // 如果有多个值，用逗号分隔
-                    String combinedValue = String.join(", ", values);
-                    ((HttpServletResponse) response).setHeader(headerName, combinedValue);
-                    log.debug("Setting header: {} = {}", headerName, combinedValue);
+                    String lowerHeaderName = headerName.toLowerCase();
+                    if (CORS_HEADERS.contains(lowerHeaderName)) {
+                        // 对于 CORS 响应头，只使用最后一个值
+                        String lastValue = values.stream().reduce((first, second) -> second).orElse("");
+                        ((HttpServletResponse) response).setHeader(headerName, lastValue);
+                        log.debug("Setting CORS header: {} = {}", headerName, lastValue);
+                    } else {
+                        // 对于其他响应头，合并所有值
+                        String combinedValue = String.join(", ", values);
+                        ((HttpServletResponse) response).setHeader(headerName, combinedValue);
+                        log.debug("Setting header: {} = {}", headerName, combinedValue);
+                    }
                 }
             });
         } else {
