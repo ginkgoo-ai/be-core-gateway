@@ -59,14 +59,6 @@ public class LoggingFilter implements Filter {
             return;
         }
 
-        // 保存原始响应头
-        Map<String, List<String>> originalHeaders = new HashMap<>();
-        Collection<String> headerNames = httpResponse.getHeaderNames();
-        if (headerNames != null) {
-            for (String headerName : headerNames) {
-                originalHeaders.put(headerName, new ArrayList<>(httpResponse.getHeaders(headerName)));
-            }
-        }
 
         ContentCachingRequestWrapper requestWrapper = new ContentCachingRequestWrapper(httpRequest);
         ContentCachingResponseWrapper responseWrapper = new ContentCachingResponseWrapper(httpResponse);
@@ -78,21 +70,7 @@ public class LoggingFilter implements Filter {
             logApiInfo(requestWrapper, responseWrapper, System.currentTimeMillis() - startTime);
         } finally {
             responseWrapper.copyBodyToResponse();
-            
-            // 清除所有现有的响应头
-            headerNames = httpResponse.getHeaderNames();
-            if (headerNames != null) {
-                for (String headerName : headerNames) {
-                    httpResponse.setHeader(headerName, null);
-                }
-            }
-            
-            // 恢复原始响应头
-            originalHeaders.forEach((headerName, headerValues) -> {
-                for (String headerValue : headerValues) {
-                    httpResponse.addHeader(headerName, headerValue);
-                }
-            });
+
         }
     }
 
