@@ -32,10 +32,15 @@ public class CaseInsensitiveResponseHeaderFilter implements Filter {
                 }
             }
 
+            Map<String, Set<String>> dedupedHeaders = new HashMap<>();
             allHeaders.forEach((headerName, values) -> {
                 String lowerHeaderName = headerName.toLowerCase();
+                dedupedHeaders.computeIfAbsent(lowerHeaderName, k -> new HashSet<>()).addAll(values);
+            });
+
+            dedupedHeaders.forEach((headerName, values) -> {
                 for (String value : values) {
-                    ((HttpServletResponse) response).addHeader(lowerHeaderName, value);
+                    ((HttpServletResponse) response).addHeader(headerName, value);
                 }
             });
         } else {
