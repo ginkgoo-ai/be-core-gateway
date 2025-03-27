@@ -23,20 +23,21 @@ public class CaseInsensitiveResponseHeaderFilter implements Filter {
             CaseInsensitiveResponseHeaderWrapper responseWrapper = new CaseInsensitiveResponseHeaderWrapper((HttpServletResponse) response);
             chain.doFilter(request, responseWrapper);
 
-            Map<String, String> dedupedHeaders = new HashMap<>();
-            Collection<String> headerNames = responseWrapper.getHeaderNames();
+            Map<String, List<String>> allHeaders = responseWrapper.getAllHeaders();
+            
+            Collection<String> headerNames = ((HttpServletResponse) response).getHeaderNames();
             if (headerNames != null) {
                 for (String headerName : headerNames) {
-                    String lowerCaseHeader = headerName.toLowerCase();
-                    if (!dedupedHeaders.containsKey(lowerCaseHeader)) {
-                        log.debug("Adding header: {}", headerName);
-                        dedupedHeaders.put(lowerCaseHeader, responseWrapper.getHeader(headerName));
-                    }
+                    ((HttpServletResponse) response).setHeader(headerName, null);
                 }
             }
 
-            responseWrapper.clearHeaders();
-            dedupedHeaders.forEach(responseWrapper::setHeader);
+            allHeaders.forEach((headerName, values) -> {
+                String lowerHeaderName = headerName.toLowerCase();
+                for (String value : values) {
+                    ((HttpServletResponse) response).addHeader(lowerHeaderName, value);
+                }
+            });
         } else {
             chain.doFilter(request, response);
         }
@@ -52,12 +53,14 @@ public class CaseInsensitiveResponseHeaderFilter implements Filter {
 
         @Override
         public void setHeader(String name, String value) {
-            headers.put(name, new ArrayList<>(Collections.singletonList(value)));
+            String lowerName = name.toLowerCase();
+            headers.put(lowerName, new ArrayList<>(Collections.singletonList(value)));
         }
 
         @Override
         public void addHeader(String name, String value) {
-            headers.computeIfAbsent(name, k -> new ArrayList<>()).add(value);
+            String lowerName = name.toLowerCase();
+            headers.computeIfAbsent(lowerName, k -> new ArrayList<>()).add(value);
         }
 
         @Override
@@ -67,14 +70,20 @@ public class CaseInsensitiveResponseHeaderFilter implements Filter {
 
         @Override
         public String getHeader(String name) {
-            List<String> values = headers.get(name);
+            String lowerName = name.toLowerCase();
+            List<String> values = headers.get(lowerName);
             return (values != null && !values.isEmpty()) ? values.get(0) : null;
         }
 
         @Override
         public Collection<String> getHeaders(String name) {
-            List<String> values = headers.get(name);
+            String lowerName = name.toLowerCase();
+            List<String> values = headers.get(lowerName);
             return values != null ? values : Collections.emptyList();
+        }
+
+        public Map<String, List<String>> getAllHeaders() {
+            return new HashMap<>(headers);
         }
 
         public void clearHeaders() {
