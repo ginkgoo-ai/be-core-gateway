@@ -37,7 +37,7 @@ public class CaseInsensitiveResponseHeaderFilter implements Filter {
                 String lowerHeaderName = headerName.toLowerCase();
                 dedupedHeaders.computeIfAbsent(lowerHeaderName, k -> new HashSet<>()).addAll(values);
             });
-
+            responseWrapper.clearHeaders();
             dedupedHeaders.forEach((headerName, values) -> {
                 for (String value : values) {
                     ((HttpServletResponse) response).addHeader(headerName, value);
