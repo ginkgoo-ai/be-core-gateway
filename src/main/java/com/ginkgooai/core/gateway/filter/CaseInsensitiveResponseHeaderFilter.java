@@ -31,14 +31,23 @@ public class CaseInsensitiveResponseHeaderFilter implements Filter {
             CaseInsensitiveResponseHeaderWrapper responseWrapper = new CaseInsensitiveResponseHeaderWrapper((HttpServletResponse) response);
             chain.doFilter(request, responseWrapper);
 
-            Map<String, String> dedupedHeaders = new HashMap<>();
+            // 先处理 CORS 响应头
             Collection<String> headerNames = responseWrapper.getHeaderNames();
-            if (headerNames != null) {
-                for (String headerName : headerNames) {
-                    String lowerCaseHeader = headerName.toLowerCase();
-                    if (CORS_HEADERS.contains(lowerCaseHeader)) {
-                        continue;
+            for (String headerName : headerNames) {
+                String lowerCaseHeader = headerName.toLowerCase();
+                if (CORS_HEADERS.contains(lowerCaseHeader)) {
+                    String value = responseWrapper.getHeader(headerName);
+                    if (value != null) {
+                        ((HttpServletResponse) response).setHeader(headerName, value);
+                        log.debug("Setting CORS header: {} = {}", headerName, value);
                     }
+                }
+            }
+
+            Map<String, String> dedupedHeaders = new HashMap<>();
+            for (String headerName : headerNames) {
+                String lowerCaseHeader = headerName.toLowerCase();
+                if (!CORS_HEADERS.contains(lowerCaseHeader)) {
                     if (!dedupedHeaders.containsKey(lowerCaseHeader)) {
                         log.debug("Adding header: {}", headerName);
                         dedupedHeaders.put(lowerCaseHeader, responseWrapper.getHeader(headerName));
