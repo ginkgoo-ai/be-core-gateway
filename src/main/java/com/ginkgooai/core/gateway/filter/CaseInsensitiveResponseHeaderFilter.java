@@ -28,22 +28,32 @@ public class CaseInsensitiveResponseHeaderFilter implements Filter {
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
         if (response instanceof HttpServletResponse) {
-            CaseInsensitiveResponseHeaderWrapper responseWrapper = new CaseInsensitiveResponseHeaderWrapper((HttpServletResponse) response);
+            HttpServletResponse originalResponse = (HttpServletResponse) response;
+            CaseInsensitiveResponseHeaderWrapper responseWrapper = new CaseInsensitiveResponseHeaderWrapper(originalResponse);
             chain.doFilter(request, responseWrapper);
 
-            // 先处理 CORS 响应头
+            // 获取当前所有响应头，并清除原始响应中的所有响应头
+            Collection<String> currentHeaderNames = originalResponse.getHeaderNames();
+            if (currentHeaderNames != null) {
+                for (String headerName : currentHeaderNames) {
+                    originalResponse.setHeader(headerName, null);
+                }
+            }
+
+            // 处理 CORS 响应头
             Collection<String> headerNames = responseWrapper.getHeaderNames();
             for (String headerName : headerNames) {
                 String lowerCaseHeader = headerName.toLowerCase();
                 if (CORS_HEADERS.contains(lowerCaseHeader)) {
                     String value = responseWrapper.getHeader(headerName);
                     if (value != null) {
-                        ((HttpServletResponse) response).setHeader(headerName, value);
+                        originalResponse.setHeader(headerName, value);
                         log.debug("Setting CORS header: {} = {}", headerName, value);
                     }
                 }
             }
 
+            // 处理其他响应头
             Map<String, String> dedupedHeaders = new HashMap<>();
             for (String headerName : headerNames) {
                 String lowerCaseHeader = headerName.toLowerCase();
@@ -55,8 +65,11 @@ public class CaseInsensitiveResponseHeaderFilter implements Filter {
                 }
             }
 
-            responseWrapper.clearHeaders();
-            dedupedHeaders.forEach(responseWrapper::setHeader);
+            // 设置去重后的响应头
+            dedupedHeaders.forEach((headerName, value) -> {
+                originalResponse.setHeader(headerName, value);
+                log.debug("Setting header: {} = {}", headerName, value);
+            });
         } else {
             chain.doFilter(request, response);
         }
