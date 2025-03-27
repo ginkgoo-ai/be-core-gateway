@@ -25,6 +25,7 @@ public class CaseInsensitiveResponseHeaderFilter implements Filter {
 
             Map<String, List<String>> allHeaders = responseWrapper.getAllHeaders();
             
+            // 清除原始响应中的所有响应头
             Collection<String> headerNames = ((HttpServletResponse) response).getHeaderNames();
             if (headerNames != null) {
                 for (String headerName : headerNames) {
@@ -32,15 +33,27 @@ public class CaseInsensitiveResponseHeaderFilter implements Filter {
                 }
             }
 
+            // 使用Map来去重响应头
             Map<String, Set<String>> dedupedHeaders = new HashMap<>();
             allHeaders.forEach((headerName, values) -> {
                 String lowerHeaderName = headerName.toLowerCase();
                 dedupedHeaders.computeIfAbsent(lowerHeaderName, k -> new HashSet<>()).addAll(values);
             });
+
+            // 记录去重前的响应头
+            log.debug("Original headers: {}", allHeaders);
+            log.debug("Deduped headers: {}", dedupedHeaders);
+
+            // 清除包装器中的响应头
             responseWrapper.clearHeaders();
+
+            // 使用setHeader而不是addHeader来设置响应头
             dedupedHeaders.forEach((headerName, values) -> {
-                for (String value : values) {
-                    ((HttpServletResponse) response).addHeader(headerName, value);
+                if (!values.isEmpty()) {
+                    // 如果有多个值，用逗号分隔
+                    String combinedValue = String.join(", ", values);
+                    ((HttpServletResponse) response).setHeader(headerName, combinedValue);
+                    log.debug("Setting header: {} = {}", headerName, combinedValue);
                 }
             });
         } else {
