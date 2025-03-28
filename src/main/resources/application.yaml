@@ -114,7 +114,7 @@ spring:
             filters:
               - TokenRelay=
               - StripPrefix=2
-              -
+
           # Ai OpenApi Route Configuration
           - id: messaging_openapi_route
             uri: ${core-messaging-uri}
@@ -130,7 +130,7 @@ spring:
             filters:
               - TokenRelay=
               - StripPrefix=2
-              -
+
   data:
     redis:
       host: ${REDIS_HOST}
@@ -184,6 +184,8 @@ springdoc:
         url: /api/storage/v3/api-docs
       - name: core-ai-service
         url: /api/ai/v3/api-docs
+      - name: core-messaging-service
+        url: /api/messaging/v3/api-docs
 
 logging:
   level:
