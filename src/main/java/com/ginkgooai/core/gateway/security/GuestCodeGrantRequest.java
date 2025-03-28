@@ -17,37 +17,30 @@ public class GuestCodeGrantRequest extends AbstractOAuth2AuthorizationGrantReque
     private static final AuthorizationGrantType GUEST_CODE_GRANT_TYPE = CustomGrantTypes.GUEST_CODE;
     
     private final String guestCode;
-    private final String resourceId;
     private final Map<String, Object> additionalParameters;
 
     /**
      * Constructs a {@code GuestCodeGrantRequest}.
      * @param clientRegistration the client registration
      * @param guestCode the guest code
-     * @param resourceId the resource ID
      */
     public GuestCodeGrantRequest(ClientRegistration clientRegistration, 
-                                 String guestCode, 
-                                 String resourceId) {
-        this(clientRegistration, guestCode, resourceId, new HashMap<>());
+                                 String guestCode) {
+        this(clientRegistration, guestCode, new HashMap<>());
     }
 
     /**
      * Constructs a {@code GuestCodeGrantRequest} with additional parameters.
      * @param clientRegistration the client registration
      * @param guestCode the guest code
-     * @param resourceId the resource ID
      * @param additionalParameters the additional parameters
      */
     public GuestCodeGrantRequest(ClientRegistration clientRegistration, 
                                  String guestCode, 
-                                 String resourceId,
                                  Map<String, Object> additionalParameters) {
         super(GUEST_CODE_GRANT_TYPE, clientRegistration);
         Assert.hasText(guestCode, "guestCode cannot be empty");
-        Assert.hasText(resourceId, "resourceId cannot be empty");
         this.guestCode = guestCode;
-        this.resourceId = resourceId;
         this.additionalParameters = additionalParameters != null ? 
                 new HashMap<>(additionalParameters) : new HashMap<>();
     }
@@ -60,13 +53,6 @@ public class GuestCodeGrantRequest extends AbstractOAuth2AuthorizationGrantReque
         return this.guestCode;
     }
 
-    /**
-     * Returns the resource ID.
-     * @return the resource ID
-     */
-    public String getResourceId() {
-        return this.resourceId;
-    }
 
     /**
      * Returns the additional parameters.

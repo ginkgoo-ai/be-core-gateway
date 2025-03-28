@@ -91,7 +91,7 @@ public class GuestCodeAuthenticationFilter extends AbstractAuthenticationProcess
             }
             
             GuestCodeGrantRequest grantRequest = new GuestCodeGrantRequest(
-                    clientRegistration, guestCode, resourceId);
+                    clientRegistration, guestCode);
             
             OAuth2AccessTokenResponse tokenResponse = tokenResponseClient.getTokenResponse(grantRequest);
             

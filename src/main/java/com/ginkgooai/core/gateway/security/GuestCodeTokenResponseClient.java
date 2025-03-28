@@ -55,7 +55,7 @@ public class GuestCodeTokenResponseClient implements OAuth2AccessTokenResponseCl
         formParameters.add(OAuth2ParameterNames.GRANT_TYPE, 
                 guestCodeGrantRequest.getGrantType().getValue());
         formParameters.add("guest_code", guestCodeGrantRequest.getGuestCode());
-        formParameters.add("resource_id", guestCodeGrantRequest.getResourceId());
+//        formParameters.add("resource_id", guestCodeGrantRequest.getResourceId());
         
         // Add any additional parameters
         guestCodeGrantRequest.getAdditionalParameters().forEach((key, value) -> {
