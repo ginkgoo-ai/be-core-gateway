@@ -2,7 +2,6 @@ package com.ginkgooai.core.gateway.security;
 
 import com.ginkgooai.core.common.security.CustomGrantTypes;
 import org.springframework.core.convert.converter.Converter;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.RequestEntity;
 import org.springframework.security.oauth2.client.endpoint.OAuth2AuthorizationCodeGrantRequest;
 import org.springframework.security.oauth2.client.endpoint.OAuth2AuthorizationCodeGrantRequestEntityConverter;
@@ -14,14 +13,13 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.util.StringUtils;
 
 import java.net.URI;
-import java.util.Collections;
 
-public class GuestCodeGrantRequestEntityConverter implements 
+public class ShareCodeGrantRequestEntityConverter implements 
         Converter<OAuth2AuthorizationCodeGrantRequest, RequestEntity<?>> {
 
     private final OAuth2AuthorizationCodeGrantRequestEntityConverter defaultConverter;
 
-    public GuestCodeGrantRequestEntityConverter() {
+    public ShareCodeGrantRequestEntityConverter() {
         this.defaultConverter = new OAuth2AuthorizationCodeGrantRequestEntityConverter();
     }
 
@@ -31,16 +29,16 @@ public class GuestCodeGrantRequestEntityConverter implements
         OAuth2AuthorizationExchange authorizationExchange = request.getAuthorizationExchange();
         
         // Check if this is a guest code request
-        String guestCode = (String) authorizationExchange.getAuthorizationRequest()
-                .getAdditionalParameters().get("guest_code");
+        String shareCode = (String) authorizationExchange.getAuthorizationRequest()
+            .getAdditionalParameters().get("share_code");
         String resourceId = (String) authorizationExchange.getAuthorizationRequest()
                 .getAdditionalParameters().get("resource_id");
-        
-        if (StringUtils.hasText(guestCode) && StringUtils.hasText(resourceId)) {
+
+        if (StringUtils.hasText(shareCode) && StringUtils.hasText(resourceId)) {
             // This is a guest code request, create custom token request
             MultiValueMap<String, String> parameters = new LinkedMultiValueMap<>();
-            parameters.add(OAuth2ParameterNames.GRANT_TYPE, CustomGrantTypes.GUEST_CODE.getValue());
-            parameters.add("guest_code", guestCode);
+            parameters.add(OAuth2ParameterNames.GRANT_TYPE, CustomGrantTypes.SHARE_CODE.getValue());
+            parameters.add("share_code", shareCode);
             parameters.add("resource_id", resourceId);
             
             URI uri = URI.create(clientRegistration.getProviderDetails().getTokenUri());

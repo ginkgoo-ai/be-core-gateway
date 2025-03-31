@@ -12,35 +12,35 @@ import java.util.Map;
 /**
  * A request for a guest code grant.
  */
-public class GuestCodeGrantRequest extends AbstractOAuth2AuthorizationGrantRequest {
-    
-    private static final AuthorizationGrantType GUEST_CODE_GRANT_TYPE = CustomGrantTypes.GUEST_CODE;
-    
-    private final String guestCode;
+public class ShareCodeGrantRequest extends AbstractOAuth2AuthorizationGrantRequest {
+
+    private static final AuthorizationGrantType GRANT_TYPE = CustomGrantTypes.SHARE_CODE;
+
+    private final String shareCode;
     private final Map<String, Object> additionalParameters;
 
     /**
-     * Constructs a {@code GuestCodeGrantRequest}.
+     * Constructs a {@code ShareCodeGrantRequest}.
      * @param clientRegistration the client registration
-     * @param guestCode the guest code
+     * @param shareCode the guest code
      */
-    public GuestCodeGrantRequest(ClientRegistration clientRegistration, 
-                                 String guestCode) {
-        this(clientRegistration, guestCode, new HashMap<>());
+    public ShareCodeGrantRequest(ClientRegistration clientRegistration,
+                                 String shareCode) {
+        this(clientRegistration, shareCode, new HashMap<>());
     }
 
     /**
-     * Constructs a {@code GuestCodeGrantRequest} with additional parameters.
+     * Constructs a {@code ShareCodeGrantRequest} with additional parameters.
      * @param clientRegistration the client registration
-     * @param guestCode the guest code
+     * @param shareCode the guest code
      * @param additionalParameters the additional parameters
      */
-    public GuestCodeGrantRequest(ClientRegistration clientRegistration, 
-                                 String guestCode, 
+    public ShareCodeGrantRequest(ClientRegistration clientRegistration,
+                                 String shareCode,
                                  Map<String, Object> additionalParameters) {
-        super(GUEST_CODE_GRANT_TYPE, clientRegistration);
-        Assert.hasText(guestCode, "guestCode cannot be empty");
-        this.guestCode = guestCode;
+        super(GRANT_TYPE, clientRegistration);
+        Assert.hasText(shareCode, "shareCode cannot be empty");
+        this.shareCode = shareCode;
         this.additionalParameters = additionalParameters != null ? 
                 new HashMap<>(additionalParameters) : new HashMap<>();
     }
@@ -49,8 +49,8 @@ public class GuestCodeGrantRequest extends AbstractOAuth2AuthorizationGrantReque
      * Returns the guest code.
      * @return the guest code
      */
-    public String getGuestCode() {
-        return this.guestCode;
+    public String getShareCode() {
+        return this.shareCode;
     }
 
 

@@ -1,12 +1,7 @@
 package com.ginkgooai.core.gateway.security;
 
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.core.convert.converter.Converter;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
-import org.springframework.http.RequestEntity;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.security.oauth2.client.endpoint.OAuth2AccessTokenResponseClient;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.core.OAuth2AccessToken;
@@ -28,22 +23,22 @@ import java.util.stream.Collectors;
 /**
  * A client that exchanges a guest code for an access token.
  */
-public class GuestCodeTokenResponseClient implements OAuth2AccessTokenResponseClient<GuestCodeGrantRequest> {
+public class ShareCodeTokenResponseClient implements OAuth2AccessTokenResponseClient<ShareCodeGrantRequest> {
     private static final String INVALID_TOKEN_RESPONSE_ERROR_CODE = "invalid_token_response";
     
     private final RestOperations restOperations;
 
-    public GuestCodeTokenResponseClient() {
+    public ShareCodeTokenResponseClient() {
         this.restOperations = new RestTemplate();
     }
 
-    public GuestCodeTokenResponseClient(RestOperations restOperations) {
+    public ShareCodeTokenResponseClient(RestOperations restOperations) {
         this.restOperations = restOperations;
     }
 
     @Override
-    public OAuth2AccessTokenResponse getTokenResponse(GuestCodeGrantRequest guestCodeGrantRequest) {
-        ClientRegistration clientRegistration = guestCodeGrantRequest.getClientRegistration();
+    public OAuth2AccessTokenResponse getTokenResponse(ShareCodeGrantRequest shareCodeGrantRequest) {
+        ClientRegistration clientRegistration = shareCodeGrantRequest.getClientRegistration();
         
         // Prepare the request headers
         HttpHeaders headers = new HttpHeaders();
@@ -52,13 +47,12 @@ public class GuestCodeTokenResponseClient implements OAuth2AccessTokenResponseCl
         
         // Prepare the request parameters
         MultiValueMap<String, String> formParameters = new LinkedMultiValueMap<>();
-        formParameters.add(OAuth2ParameterNames.GRANT_TYPE, 
-                guestCodeGrantRequest.getGrantType().getValue());
-        formParameters.add("guest_code", guestCodeGrantRequest.getGuestCode());
-//        formParameters.add("resource_id", guestCodeGrantRequest.getResourceId());
+        formParameters.add(OAuth2ParameterNames.GRANT_TYPE,
+            shareCodeGrantRequest.getGrantType().getValue());
+        formParameters.add("share_code", shareCodeGrantRequest.getShareCode());
         
         // Add any additional parameters
-        guestCodeGrantRequest.getAdditionalParameters().forEach((key, value) -> {
+        shareCodeGrantRequest.getAdditionalParameters().forEach((key, value) -> {
             formParameters.add(key, value.toString());
         });
         

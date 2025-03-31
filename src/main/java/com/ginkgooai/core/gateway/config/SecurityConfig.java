@@ -1,8 +1,10 @@
 package com.ginkgooai.core.gateway.config;
 
-import java.net.URI;
-import java.util.LinkedHashMap;
-
+import com.ginkgooai.core.gateway.filter.ShareCodeAuthenticationFilter;
+import com.ginkgooai.core.gateway.security.ProblemDetailsAuthenticationEntryPoint;
+import com.ginkgooai.core.gateway.security.ShareCodeAuthorizationRequestResolver;
+import com.ginkgooai.core.gateway.security.ShareCodeGrantRequestEntityConverter;
+import com.ginkgooai.core.gateway.security.ShareCodeTokenResponseClient;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -28,12 +30,7 @@ import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequest
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.DelegatingAuthenticationEntryPoint;
-import org.springframework.security.web.authentication.HttpStatusEntryPoint;
-import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
-import org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler;
-import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.*;
 import org.springframework.security.web.authentication.logout.CompositeLogoutHandler;
 import org.springframework.security.web.authentication.logout.LogoutHandler;
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
@@ -45,11 +42,8 @@ import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 
-import com.ginkgooai.core.gateway.filter.GuestCodeAuthenticationFilter;
-import com.ginkgooai.core.gateway.security.GuestCodeAuthorizationRequestResolver;
-import com.ginkgooai.core.gateway.security.GuestCodeGrantRequestEntityConverter;
-import com.ginkgooai.core.gateway.security.GuestCodeTokenResponseClient;
-import com.ginkgooai.core.gateway.security.ProblemDetailsAuthenticationEntryPoint;
+import java.net.URI;
+import java.util.LinkedHashMap;
 
 @Configuration(proxyBeanMethods = false)
 @EnableWebSecurity
@@ -101,9 +95,9 @@ public class SecurityConfig {
         CsrfTokenRequestAttributeHandler csrfTokenRequestAttributeHandler = new CsrfTokenRequestAttributeHandler();
         csrfTokenRequestAttributeHandler.setCsrfRequestAttributeName(null);
 
-        GuestCodeTokenResponseClient tokenResponseClient = new GuestCodeTokenResponseClient();
+        ShareCodeTokenResponseClient tokenResponseClient = new ShareCodeTokenResponseClient();
 
-        GuestCodeAuthenticationFilter guestCodeFilter = new GuestCodeAuthenticationFilter(
+        ShareCodeAuthenticationFilter shareCodeFilter = new ShareCodeAuthenticationFilter(
                 clientRegistrationRepository,
                 authorizedClientService,
                 tokenResponseClient,
@@ -143,7 +137,7 @@ public class SecurityConfig {
                         .loginPage("/login")
                         .authorizationEndpoint(authorization -> authorization
                                 .authorizationRequestResolver(
-                                        new GuestCodeAuthorizationRequestResolver(
+                                    new ShareCodeAuthorizationRequestResolver(
                                                 clientRegistrationRepository,
                                                 "/oauth2/authorization",
                                                 "ginkgoo-web-client"))
@@ -172,7 +166,7 @@ public class SecurityConfig {
                                         authorizationRequestResolver)
                                 .authorizationRequestRepository(
                                         authorizationRequestRepository())))
-                .addFilterBefore(guestCodeFilter, UsernamePasswordAuthenticationFilter.class);
+            .addFilterBefore(shareCodeFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
@@ -180,7 +174,7 @@ public class SecurityConfig {
     @Bean
     public OAuth2AccessTokenResponseClient<OAuth2AuthorizationCodeGrantRequest> accessTokenResponseClient() {
         DefaultAuthorizationCodeTokenResponseClient client = new DefaultAuthorizationCodeTokenResponseClient();
-        client.setRequestEntityConverter(new GuestCodeGrantRequestEntityConverter());
+        client.setRequestEntityConverter(new ShareCodeGrantRequestEntityConverter());
         return client;
     }
 

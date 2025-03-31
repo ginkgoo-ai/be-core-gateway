@@ -2,14 +2,13 @@ package com.ginkgooai.core.gateway.filter;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ginkgooai.core.gateway.security.GuestCodeGrantRequest;
-import com.ginkgooai.core.gateway.security.GuestCodeTokenResponseClient;
+import com.ginkgooai.core.gateway.security.ShareCodeGrantRequest;
+import com.ginkgooai.core.gateway.security.ShareCodeTokenResponseClient;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
@@ -29,57 +28,56 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-public class GuestCodeAuthenticationFilter extends AbstractAuthenticationProcessingFilter {
+public class ShareCodeAuthenticationFilter extends AbstractAuthenticationProcessingFilter {
     
     private final ClientRegistrationRepository clientRegistrationRepository;
     private final OAuth2AuthorizedClientService authorizedClientService;
-    private final GuestCodeTokenResponseClient tokenResponseClient;
+    private final ShareCodeTokenResponseClient tokenResponseClient;
     private final String clientRegistrationId;
-    private final String defaultRedirectUri;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public GuestCodeAuthenticationFilter(
+    public ShareCodeAuthenticationFilter(
             ClientRegistrationRepository clientRegistrationRepository,
             OAuth2AuthorizedClientService authorizedClientService,
-            GuestCodeTokenResponseClient tokenResponseClient,
+            ShareCodeTokenResponseClient tokenResponseClient,
             String clientRegistrationId,
             String defaultRedirectUri) {
-        super(new AntPathRequestMatcher("/oauth2/guest"));
+        super(new AntPathRequestMatcher("/oauth2/share"));
         this.clientRegistrationRepository = clientRegistrationRepository;
         this.authorizedClientService = authorizedClientService;
         this.tokenResponseClient = tokenResponseClient;
         this.clientRegistrationId = clientRegistrationId;
-        this.defaultRedirectUri = defaultRedirectUri;
-
 
         setAuthenticationSuccessHandler((request, response, authentication) -> {
-            String redirectUri = defaultRedirectUri;
-            if (authentication instanceof OAuth2AuthenticationToken oauth2Auth) {
-                OAuth2User oauth2User = oauth2Auth.getPrincipal();
-                Map<String, Object> attributes = oauth2User.getAttributes();
+            response.setStatus(HttpServletResponse.SC_OK);
+            response.setContentType("application/json");
 
-                if (attributes.containsKey("redirect_url")) {
-                    redirectUri = (String) attributes.get("redirect_url");
-                }
+            Map<String, Object> responseBody = new HashMap<>();
+            responseBody.put("status", "success");
+            responseBody.put("authenticated", true);
+
+            if (authentication.getPrincipal() instanceof OAuth2User) {
+                OAuth2User oauth2User = (OAuth2User) authentication.getPrincipal();
+                responseBody.put("user", oauth2User.getAttributes());
             }
-            response.sendRedirect(redirectUri);
+
+            objectMapper.writeValue(response.getWriter(), responseBody);
         });
         
         setAuthenticationFailureHandler((request, response, exception) -> {
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, 
-                "Invalid guest code: " + exception.getMessage());
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED,
+                "Invalid share code: " + exception.getMessage());
         });
     }
 
     @Override
     public Authentication attemptAuthentication(HttpServletRequest request,
                                                 HttpServletResponse response) throws AuthenticationException {
-        
-        String guestCode = request.getParameter("guest_code");
-        String resourceId = request.getParameter("resource_id");
-        
-        if (guestCode == null || resourceId == null) {
-            throw new AuthenticationServiceException("guest_code and resource_id are required");
+
+        String shareCode = request.getParameter("share_code");
+
+        if (shareCode == null) {
+            throw new AuthenticationServiceException("share_code is required");
         }
 
         try {
@@ -89,9 +87,9 @@ public class GuestCodeAuthenticationFilter extends AbstractAuthenticationProcess
                 throw new AuthenticationServiceException(
                         "Client registration not found with ID: " + clientRegistrationId);
             }
-            
-            GuestCodeGrantRequest grantRequest = new GuestCodeGrantRequest(
-                    clientRegistration, guestCode);
+
+            ShareCodeGrantRequest grantRequest = new ShareCodeGrantRequest(
+                clientRegistration, shareCode);
             
             OAuth2AccessTokenResponse tokenResponse = tokenResponseClient.getTokenResponse(grantRequest);
             
@@ -100,21 +98,19 @@ public class GuestCodeAuthenticationFilter extends AbstractAuthenticationProcess
             }
 
             Map<String, Object> userAttributes = extractUserAttributes(tokenResponse);
-            String principalName = (String) userAttributes.getOrDefault("guest_email", "guest-user");
-            
             OAuth2User oauth2User = new DefaultOAuth2User(
-                    Collections.singletonList(new SimpleGrantedAuthority("ROLE_GUEST")), 
-                    userAttributes, 
+                Collections.emptyList(),
+                userAttributes,
                     "sub");
             
             OAuth2AuthenticationToken authenticationToken = new OAuth2AuthenticationToken(
-                    oauth2User, 
-                    Collections.singletonList(new SimpleGrantedAuthority("ROLE_GUEST")), 
+                    oauth2User,
+                Collections.emptyList(), 
                     clientRegistrationId);
             
             OAuth2AuthorizedClient authorizedClient = new OAuth2AuthorizedClient(
                     clientRegistration,
-                    principalName,
+                "ginkgoo-web-client",
                     tokenResponse.getAccessToken(),
                     tokenResponse.getRefreshToken()
             );
