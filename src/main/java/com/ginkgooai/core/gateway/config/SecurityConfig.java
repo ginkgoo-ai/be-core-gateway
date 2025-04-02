@@ -123,7 +123,7 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/api/*/v3/api-docs/**")
                         .permitAll()
-                        .requestMatchers("/oauth2/guest").permitAll() // Allow guest code entry
+                    .requestMatchers("/api/oauth2/guest").permitAll() // Allow guest code entry
                         .anyRequest().authenticated())
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)

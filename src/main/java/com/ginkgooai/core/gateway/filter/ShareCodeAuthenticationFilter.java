@@ -42,7 +42,7 @@ public class ShareCodeAuthenticationFilter extends AbstractAuthenticationProcess
             ShareCodeTokenResponseClient tokenResponseClient,
             String clientRegistrationId,
             String defaultRedirectUri) {
-        super(new AntPathRequestMatcher("/oauth2/share"));
+        super(new AntPathRequestMatcher("/api/oauth2/share"));
         this.clientRegistrationRepository = clientRegistrationRepository;
         this.authorizedClientService = authorizedClientService;
         this.tokenResponseClient = tokenResponseClient;
