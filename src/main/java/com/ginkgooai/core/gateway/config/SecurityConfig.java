@@ -121,7 +121,7 @@ public class SecurityConfig {
                                 // Swagger
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
-                                "/*/webhook")
+                                "/api/messaging/webhook")
                         .permitAll()
                     .requestMatchers("/api/oauth2/guest").permitAll() // Allow guest code entry
                         .anyRequest().authenticated())
