@@ -13,6 +13,9 @@ app:
   base-uri: ${SLATE_URI}
   api-uri: ${AUTH_CLIENT}
   dev-uris: ${DEV_SLATE_URI}
+  rate-limit:
+    capacity: 100
+    period-minutes: 1
 
 server:
   port: ${CORE_GATEWAY_PORT}
@@ -195,4 +198,6 @@ logging:
     org.springframework.security: ${LOG_LEVEL_SPRING_SECURITY:DEBUG}
     org.springframework.web.cors: ${LOG_LEVEL_SPRING_WEB_CORS:DEBUG}
     com.ginkgooai: ${LOG_LEVEL_GINKGOOAI:DEBUG}
+    io.github.bucket4j: TRACE
+    org.springframework.cloud.gateway.filter.ratelimit: TRACE
 

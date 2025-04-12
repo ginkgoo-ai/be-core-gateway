@@ -13,12 +13,8 @@ import org.springframework.web.util.ContentCachingResponseWrapper;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @Component
 @Order(1)
@@ -41,6 +37,7 @@ public class LoggingFilter implements Filter {
 
     private static final List<String> EXCLUDE_PATHS = Arrays.asList(
             "/actuator",
+        "/health",
             "/swagger",
             "/v3/api-docs",
             "/favicon.ico",

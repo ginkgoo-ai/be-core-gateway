@@ -1,10 +1,6 @@
 package com.ginkgooai.core.gateway.filter;
 
-import jakarta.servlet.Filter;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.ServletRequest;
-import jakarta.servlet.ServletResponse;
+import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpServletResponseWrapper;
 import lombok.extern.slf4j.Slf4j;
@@ -48,7 +44,7 @@ public class CaseInsensitiveResponseHeaderFilter implements Filter {
                     String value = responseWrapper.getHeader(headerName);
                     if (value != null) {
                         originalResponse.setHeader(headerName, value);
-                        log.debug("Setting CORS header: {} = {}", headerName, value);
+                        log.trace("Setting CORS header: {} = {}", headerName, value);
                     }
                 }
             }
@@ -59,7 +55,7 @@ public class CaseInsensitiveResponseHeaderFilter implements Filter {
                 String lowerCaseHeader = headerName.toLowerCase();
                 if (!CORS_HEADERS.contains(lowerCaseHeader)) {
                     if (!dedupedHeaders.containsKey(lowerCaseHeader)) {
-                        log.debug("Adding header: {}", headerName);
+                        log.trace("Adding header: {}", headerName);
                         dedupedHeaders.put(lowerCaseHeader, responseWrapper.getHeader(headerName));
                     }
                 }
@@ -68,7 +64,7 @@ public class CaseInsensitiveResponseHeaderFilter implements Filter {
             // 设置去重后的响应头
             dedupedHeaders.forEach((headerName, value) -> {
                 originalResponse.setHeader(headerName, value);
-                log.debug("Setting header: {} = {}", headerName, value);
+                log.trace("Setting header: {} = {}", headerName, value);
             });
         } else {
             chain.doFilter(request, response);
