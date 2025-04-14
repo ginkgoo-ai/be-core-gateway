@@ -10,9 +10,9 @@ auth-server-uri: ${AUTH_SERVER}
 
 app:
   domain-name: ${APP_DOMAIN}
-  base-uri: ${SLATE_URI}
+  base-uri: ${APP_URI}
   api-uri: ${AUTH_CLIENT}
-  dev-uris: ${DEV_SLATE_URI}
+  dev-uris: ${DEV_APP_URI}
   rate-limit:
     capacity: 100
     period-minutes: 1
