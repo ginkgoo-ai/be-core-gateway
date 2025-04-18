@@ -1,7 +1,6 @@
 package com.ginkgooai.core.gateway.config;
 
 import com.ginkgooai.core.gateway.filter.ShareCodeAuthenticationFilter;
-import com.ginkgooai.core.gateway.filter.TokenEnabledCheckFilter;
 import com.ginkgooai.core.gateway.security.ProblemDetailsAuthenticationEntryPoint;
 import com.ginkgooai.core.gateway.security.ShareCodeAuthorizationRequestResolver;
 import com.ginkgooai.core.gateway.security.ShareCodeGrantRequestEntityConverter;
@@ -104,7 +103,8 @@ public class SecurityConfig {
 				appBaseUri);
 
 		// Create token enabled check filter to verify if user accounts are enabled
-		TokenEnabledCheckFilter tokenEnabledCheckFilter = new TokenEnabledCheckFilter(needActiveAccount);
+		// TokenEnabledCheckFilter tokenEnabledCheckFilter = new
+		// TokenEnabledCheckFilter(needActiveAccount);
 
 		http.cors(Customizer.withDefaults())
 			.csrf(csrf -> csrf.disable())
@@ -155,8 +155,9 @@ public class SecurityConfig {
 			.oauth2Client(oauth2Client -> oauth2Client.authorizationCodeGrant(
 					codeGrant -> codeGrant.authorizationRequestResolver(authorizationRequestResolver)
 						.authorizationRequestRepository(authorizationRequestRepository())))
-			.addFilterBefore(shareCodeFilter, UsernamePasswordAuthenticationFilter.class)
-			.addFilterAfter(tokenEnabledCheckFilter, UsernamePasswordAuthenticationFilter.class);
+			.addFilterBefore(shareCodeFilter, UsernamePasswordAuthenticationFilter.class);
+		// .addFilterAfter(tokenEnabledCheckFilter,
+		// UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
