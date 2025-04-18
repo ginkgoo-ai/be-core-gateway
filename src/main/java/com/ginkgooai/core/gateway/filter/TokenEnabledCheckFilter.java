@@ -21,7 +21,10 @@ public class TokenEnabledCheckFilter extends OncePerRequestFilter {
 
 	private final ObjectMapper objectMapper;
 
-	public TokenEnabledCheckFilter() {
+	private final boolean needActiveAccount;
+
+	public TokenEnabledCheckFilter(boolean needActiveAccount) {
+		this.needActiveAccount = needActiveAccount;
 		this.objectMapper = new ObjectMapper();
 	}
 
@@ -29,7 +32,7 @@ public class TokenEnabledCheckFilter extends OncePerRequestFilter {
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
 			throws ServletException, IOException {
 
-		if (shouldSkip(request)) {
+		if (shouldSkip(request) || !needActiveAccount) {
 			filterChain.doFilter(request, response);
 			return;
 		}
@@ -70,5 +73,4 @@ public class TokenEnabledCheckFilter extends OncePerRequestFilter {
 
 		objectMapper.writeValue(response.getOutputStream(), problemDetail);
 	}
-
 }
