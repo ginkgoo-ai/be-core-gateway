@@ -1,6 +1,7 @@
 package com.ginkgooai.core.gateway.config;
 
 import com.ginkgooai.core.gateway.filter.ShareCodeAuthenticationFilter;
+import com.ginkgooai.core.gateway.filter.TokenEnabledCheckFilter;
 import com.ginkgooai.core.gateway.security.ProblemDetailsAuthenticationEntryPoint;
 import com.ginkgooai.core.gateway.security.ShareCodeAuthorizationRequestResolver;
 import com.ginkgooai.core.gateway.security.ShareCodeGrantRequestEntityConverter;
@@ -23,10 +24,7 @@ import org.springframework.security.oauth2.client.endpoint.OAuth2AccessTokenResp
 import org.springframework.security.oauth2.client.endpoint.OAuth2AuthorizationCodeGrantRequest;
 import org.springframework.security.oauth2.client.oidc.web.logout.OidcClientInitiatedLogoutSuccessHandler;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
-import org.springframework.security.oauth2.client.web.AuthorizationRequestRepository;
-import org.springframework.security.oauth2.client.web.DefaultOAuth2AuthorizationRequestResolver;
-import org.springframework.security.oauth2.client.web.HttpSessionOAuth2AuthorizationRequestRepository;
-import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestResolver;
+import org.springframework.security.oauth2.client.web.*;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
@@ -64,8 +62,8 @@ public class SecurityConfig {
     @Bean
     public OAuth2AuthorizationRequestResolver authorizationRequestResolver(
             ClientRegistrationRepository clientRegistrationRepository) {
-        DefaultOAuth2AuthorizationRequestResolver resolver = new DefaultOAuth2AuthorizationRequestResolver(
-                clientRegistrationRepository, "/oauth2/authorization");
+		DefaultOAuth2AuthorizationRequestResolver resolver = new DefaultOAuth2AuthorizationRequestResolver(
+				clientRegistrationRepository, "/oauth2/authorization");
 
         // Enable PKCE
         // resolver.setAuthorizationRequestCustomizer(OAuth2AuthorizationRequestCustomizers.withPkce());
@@ -85,28 +83,28 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http,
-                                                   AuthenticationConfiguration authenticationConfiguration,
-                                                   OAuth2AuthorizationRequestResolver authorizationRequestResolver,
-                                                   ClientRegistrationRepository clientRegistrationRepository,
-                                                   OAuth2AuthorizedClientService authorizedClientService) throws Exception {
+			AuthenticationConfiguration authenticationConfiguration,
+			OAuth2AuthorizationRequestResolver authorizationRequestResolver,
+			ClientRegistrationRepository clientRegistrationRepository,
+			OAuth2AuthorizedClientService authorizedClientService,
+			OAuth2AuthorizedClientRepository authorizedClientRepository) throws Exception {
 
-        CookieCsrfTokenRepository cookieCsrfTokenRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
+		CookieCsrfTokenRepository cookieCsrfTokenRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
         cookieCsrfTokenRepository.setCookieCustomizer(cookie -> cookie.domain(domainName));
-        CsrfTokenRequestAttributeHandler csrfTokenRequestAttributeHandler = new CsrfTokenRequestAttributeHandler();
+		CsrfTokenRequestAttributeHandler csrfTokenRequestAttributeHandler = new CsrfTokenRequestAttributeHandler();
         csrfTokenRequestAttributeHandler.setCsrfRequestAttributeName(null);
 
         ShareCodeTokenResponseClient tokenResponseClient = new ShareCodeTokenResponseClient();
 
         ShareCodeAuthenticationFilter shareCodeFilter = new ShareCodeAuthenticationFilter(
-                clientRegistrationRepository,
-                authorizedClientService,
-                tokenResponseClient,
-                "ginkgoo-web-client",
-                appBaseUri);
+				clientRegistrationRepository, authorizedClientService, tokenResponseClient, "ginkgoo-web-client",
+				appBaseUri);
 
-        http
-                .cors(Customizer.withDefaults())
-                .csrf(csrf -> csrf.disable())
+		// Create token enabled check filter to verify if user accounts are enabled
+		TokenEnabledCheckFilter tokenEnabledCheckFilter = new TokenEnabledCheckFilter();
+
+		http.cors(Customizer.withDefaults())
+			.csrf(csrf -> csrf.disable())
                 // .csrf(csrf ->
                 // csrf
                 // .csrfTokenRepository(cookieCsrfTokenRepository)
@@ -114,96 +112,83 @@ public class SecurityConfig {
                 // .ignoringRequestMatchers("/logout")
                 // )
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers(
-                                "/health",
-                                "/login",
-                                "/error",
+				.requestMatchers("/health", "/login", "/error",
                                 // Swagger
-                                "/swagger-ui/**",
-                                "/v3/api-docs/**",
-                                "/api/messaging/webhook")
-                        .permitAll()
-                    .requestMatchers("/api/oauth2/guest").permitAll() // Allow guest code entry
+						"/swagger-ui/**", "/v3/api-docs/**", "/api/messaging/webhook")
+				.permitAll()
+				.requestMatchers("/api/oauth2/guest")
+				.permitAll() // Allow guest
+								// code entry
                         .anyRequest().authenticated())
                 .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
-                        .maximumSessions(1)
-                        .sessionRegistry(sessionRegistry())
-                        .maxSessionsPreventsLogin(false))
+				.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+				.maximumSessions(1)
+				.sessionRegistry(sessionRegistry())
+				.maxSessionsPreventsLogin(false))
                 .exceptionHandling(exceptionHandling -> exceptionHandling
                         .authenticationEntryPoint(new ProblemDetailsAuthenticationEntryPoint())
                         .accessDeniedHandler(new ProblemDetailsAuthenticationEntryPoint()))
-                .oauth2Login(oauth2Login -> oauth2Login
-                        .loginPage("/login")
-                        .authorizationEndpoint(authorization -> authorization
-                                .authorizationRequestResolver(
-                                    new ShareCodeAuthorizationRequestResolver(
+			.oauth2Login(oauth2Login -> oauth2Login.loginPage("/login")
+				.authorizationEndpoint(authorization -> authorization
+					.authorizationRequestResolver(new ShareCodeAuthorizationRequestResolver(
                                                 clientRegistrationRepository,
-                                                "/oauth2/authorization",
-                                                "ginkgoo-web-client"))
+							"/oauth2/authorization", "ginkgoo-web-client"))
 
                         )
                         .tokenEndpoint(token -> token
                                 .accessTokenResponseClient(accessTokenResponseClient()))
-                        .successHandler(new SimpleUrlAuthenticationSuccessHandler(
-                                "/authorized"))
-                        .failureHandler(new SimpleUrlAuthenticationFailureHandler(
-                                "/login?error=true")))
-                .logout(logout -> logout
-                        .logoutUrl("/logout")
+				.successHandler(new SimpleUrlAuthenticationSuccessHandler("/authorized"))
+				.failureHandler(new SimpleUrlAuthenticationFailureHandler("/login?error=true")))
+			.logout(logout -> logout.logoutUrl("/logout")
                         .addLogoutHandler(logoutHandler(cookieCsrfTokenRepository))
                         // .logoutSuccessHandler(new
                         // HttpStatusReturningLogoutSuccessHandler(HttpStatus.OK))
                         .logoutSuccessHandler(
                                 oidcLogoutSuccessHandler(clientRegistrationRepository))
-                        .invalidateHttpSession(true)
-                        .deleteCookies("JSESSIONID")
-                        .deleteCookies("SESSION")
-                        .clearAuthentication(true))
-                .oauth2Client(oauth2Client -> oauth2Client
-                        .authorizationCodeGrant(codeGrant -> codeGrant
-                                .authorizationRequestResolver(
-                                        authorizationRequestResolver)
-                                .authorizationRequestRepository(
-                                        authorizationRequestRepository())))
-            .addFilterBefore(shareCodeFilter, UsernamePasswordAuthenticationFilter.class);
+				.invalidateHttpSession(true)
+				.deleteCookies("JSESSIONID")
+				.deleteCookies("SESSION")
+				.clearAuthentication(true))
+			.oauth2Client(oauth2Client -> oauth2Client.authorizationCodeGrant(
+					codeGrant -> codeGrant.authorizationRequestResolver(authorizationRequestResolver)
+						.authorizationRequestRepository(authorizationRequestRepository())))
+			.addFilterBefore(shareCodeFilter, UsernamePasswordAuthenticationFilter.class)
+			.addFilterAfter(tokenEnabledCheckFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
     @Bean
     public OAuth2AccessTokenResponseClient<OAuth2AuthorizationCodeGrantRequest> accessTokenResponseClient() {
-        DefaultAuthorizationCodeTokenResponseClient client = new DefaultAuthorizationCodeTokenResponseClient();
+		DefaultAuthorizationCodeTokenResponseClient client = new DefaultAuthorizationCodeTokenResponseClient();
         client.setRequestEntityConverter(new ShareCodeGrantRequestEntityConverter());
         return client;
     }
 
     private AuthenticationEntryPoint authenticationEntryPoint() {
-        AuthenticationEntryPoint authenticationEntryPoint = new LoginUrlAuthenticationEntryPoint(
-                "/oauth2/authorization/ginkgoo-web-client");
+		AuthenticationEntryPoint authenticationEntryPoint = new LoginUrlAuthenticationEntryPoint(
+				"/oauth2/authorization/ginkgoo-web-client");
         MediaTypeRequestMatcher textHtmlMatcher = new MediaTypeRequestMatcher(MediaType.TEXT_HTML);
         textHtmlMatcher.setUseEquals(true);
 
         LinkedHashMap<RequestMatcher, AuthenticationEntryPoint> entryPoints = new LinkedHashMap<>();
         entryPoints.put(textHtmlMatcher, authenticationEntryPoint);
 
-        DelegatingAuthenticationEntryPoint delegatingAuthenticationEntryPoint = new DelegatingAuthenticationEntryPoint(
-                entryPoints);
-        delegatingAuthenticationEntryPoint.setDefaultEntryPoint(
-                new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED));
+		DelegatingAuthenticationEntryPoint delegatingAuthenticationEntryPoint = new DelegatingAuthenticationEntryPoint(
+				entryPoints);
+		delegatingAuthenticationEntryPoint.setDefaultEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED));
         return delegatingAuthenticationEntryPoint;
     }
 
     private LogoutHandler logoutHandler(CsrfTokenRepository csrfTokenRepository) {
-        return new CompositeLogoutHandler(
-                new SecurityContextLogoutHandler(),
+		return new CompositeLogoutHandler(new SecurityContextLogoutHandler(),
                 new CsrfLogoutHandler(csrfTokenRepository));
     }
 
     private LogoutSuccessHandler oidcLogoutSuccessHandler(
             ClientRegistrationRepository clientRegistrationRepository) {
-        OidcClientInitiatedLogoutSuccessHandler oidcLogoutSuccessHandler = new OidcClientInitiatedLogoutSuccessHandler(
-                clientRegistrationRepository);
+		OidcClientInitiatedLogoutSuccessHandler oidcLogoutSuccessHandler = new OidcClientInitiatedLogoutSuccessHandler(
+				clientRegistrationRepository);
 
         oidcLogoutSuccessHandler.setPostLogoutRedirectUri(URI.create(apiBaseUri).toString());
 
