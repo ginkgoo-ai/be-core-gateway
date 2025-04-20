@@ -1,6 +1,8 @@
 package com.ginkgooai.core.gateway.config;
 
+import com.ginkgooai.core.gateway.client.identity.UserClient;
 import com.ginkgooai.core.gateway.filter.ShareCodeAuthenticationFilter;
+import com.ginkgooai.core.gateway.filter.TokenEnabledCheckFilter;
 import com.ginkgooai.core.gateway.security.ProblemDetailsAuthenticationEntryPoint;
 import com.ginkgooai.core.gateway.security.ShareCodeAuthorizationRequestResolver;
 import com.ginkgooai.core.gateway.security.ShareCodeGrantRequestEntityConverter;
@@ -11,7 +13,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.config.Customizer;
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -23,7 +24,10 @@ import org.springframework.security.oauth2.client.endpoint.OAuth2AccessTokenResp
 import org.springframework.security.oauth2.client.endpoint.OAuth2AuthorizationCodeGrantRequest;
 import org.springframework.security.oauth2.client.oidc.web.logout.OidcClientInitiatedLogoutSuccessHandler;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
-import org.springframework.security.oauth2.client.web.*;
+import org.springframework.security.oauth2.client.web.AuthorizationRequestRepository;
+import org.springframework.security.oauth2.client.web.DefaultOAuth2AuthorizationRequestResolver;
+import org.springframework.security.oauth2.client.web.HttpSessionOAuth2AuthorizationRequestRepository;
+import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestResolver;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
@@ -55,12 +59,6 @@ public class SecurityConfig {
     @Value("${app.api-uri}")
     private String apiBaseUri;
 
-    @Value("${auth-server-uri}")
-    private String authServerUri;
-
-	@Value("${app.active-account}")
-	private boolean needActiveAccount;
-
     @Bean
     public OAuth2AuthorizationRequestResolver authorizationRequestResolver(
             ClientRegistrationRepository clientRegistrationRepository) {
@@ -83,13 +81,16 @@ public class SecurityConfig {
         return new SessionRegistryImpl();
     }
 
+	@Bean
+	public TokenEnabledCheckFilter tokenEnabledCheckFilter(UserClient userClient) {
+		return new TokenEnabledCheckFilter(userClient);
+	}
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http,
-			AuthenticationConfiguration authenticationConfiguration,
 			OAuth2AuthorizationRequestResolver authorizationRequestResolver,
 			ClientRegistrationRepository clientRegistrationRepository,
-			OAuth2AuthorizedClientService authorizedClientService,
-			OAuth2AuthorizedClientRepository authorizedClientRepository) throws Exception {
+			OAuth2AuthorizedClientService authorizedClientService, UserClient userClient) throws Exception {
 
 		CookieCsrfTokenRepository cookieCsrfTokenRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
         cookieCsrfTokenRepository.setCookieCustomizer(cookie -> cookie.domain(domainName));
@@ -103,8 +104,7 @@ public class SecurityConfig {
 				appBaseUri);
 
 		// Create token enabled check filter to verify if user accounts are enabled
-		// TokenEnabledCheckFilter tokenEnabledCheckFilter = new
-		// TokenEnabledCheckFilter(needActiveAccount);
+		TokenEnabledCheckFilter tokenEnabledCheckFilter = new TokenEnabledCheckFilter(userClient);
 
 		http.cors(Customizer.withDefaults())
 			.csrf(csrf -> csrf.disable())
@@ -155,10 +155,8 @@ public class SecurityConfig {
 			.oauth2Client(oauth2Client -> oauth2Client.authorizationCodeGrant(
 					codeGrant -> codeGrant.authorizationRequestResolver(authorizationRequestResolver)
 						.authorizationRequestRepository(authorizationRequestRepository())))
-			.addFilterBefore(shareCodeFilter, UsernamePasswordAuthenticationFilter.class);
-		// .addFilterAfter(tokenEnabledCheckFilter,
-		// UsernamePasswordAuthenticationFilter.class);
-
+			.addFilterBefore(shareCodeFilter, UsernamePasswordAuthenticationFilter.class)
+			.addFilterAfter(tokenEnabledCheckFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 
