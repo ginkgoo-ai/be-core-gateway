@@ -16,6 +16,8 @@ import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.core.session.SessionRegistryImpl;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
@@ -29,6 +31,10 @@ import org.springframework.security.oauth2.client.web.DefaultOAuth2Authorization
 import org.springframework.security.oauth2.client.web.HttpSessionOAuth2AuthorizationRequestRepository;
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestResolver;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.JwtDecoders;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.*;
@@ -44,7 +50,10 @@ import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
+import java.util.List;
 
 @Configuration(proxyBeanMethods = false)
 @EnableWebSecurity
@@ -58,6 +67,9 @@ public class SecurityConfig {
 
     @Value("${app.api-uri}")
     private String apiBaseUri;
+
+	@Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}")
+	private String issuerUri;
 
     @Bean
     public OAuth2AuthorizationRequestResolver authorizationRequestResolver(
@@ -155,10 +167,61 @@ public class SecurityConfig {
 			.oauth2Client(oauth2Client -> oauth2Client.authorizationCodeGrant(
 					codeGrant -> codeGrant.authorizationRequestResolver(authorizationRequestResolver)
 						.authorizationRequestRepository(authorizationRequestRepository())))
+			.oauth2ResourceServer(
+					oauth2 -> oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())))
 			.addFilterBefore(shareCodeFilter, UsernamePasswordAuthenticationFilter.class)
 			.addFilterAfter(tokenEnabledCheckFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
+
+	@Bean
+	public JwtDecoder jwtDecoder() {
+		return JwtDecoders.fromIssuerLocation(issuerUri);
+	}
+
+	public JwtAuthenticationConverter jwtAuthenticationConverter() {
+		JwtAuthenticationConverter jwtConverter = new JwtAuthenticationConverter();
+
+		jwtConverter.setPrincipalClaimName("email");
+		jwtConverter.setJwtGrantedAuthoritiesConverter(jwt -> {
+			Collection<GrantedAuthority> authorities = new ArrayList<>();
+			List<String> roles = getClaimAsList(jwt, "role");
+			if (roles != null) {
+				for (String role : roles) {
+					authorities.add(new SimpleGrantedAuthority(role.toUpperCase()));
+				}
+			}
+
+			List<String> scopes = getClaimAsList(jwt, "scope");
+			if (scopes != null) {
+				for (String scope : scopes) {
+					authorities.add(new SimpleGrantedAuthority(scope));
+				}
+			}
+
+			return authorities;
+		});
+
+		return jwtConverter;
+	}
+
+	private List<String> getClaimAsList(Jwt jwt, String claimName) {
+		Object claimValue = jwt.getClaim(claimName);
+
+		if (claimValue == null) {
+			return null;
+		}
+
+		if (claimValue instanceof List) {
+			return (List<String>) claimValue;
+		}
+
+		if (claimValue instanceof String) {
+			return List.of(((String) claimValue).split(" "));
+		}
+
+		return null;
+	}
 
     @Bean
     public OAuth2AccessTokenResponseClient<OAuth2AuthorizationCodeGrantRequest> accessTokenResponseClient() {

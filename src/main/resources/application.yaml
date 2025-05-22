@@ -5,6 +5,7 @@ core-project-uri: ${SERVICE_SCHEME}://${CORE_PROJECT_HOST}:${CORE_PROJECT_PORT}
 core-storage-uri: ${SERVICE_SCHEME}://${CORE_STORAGE_HOST}:${CORE_STORAGE_PORT}
 core-ai-uri: ${SERVICE_SCHEME}://${CORE_AI_HOST}:${CORE_AI_PORT}
 core-messaging-uri: ${SERVICE_SCHEME}://${CORE_MESSAGING_HOST}:${CORE_MESSAGING_PORT}
+legal-case-uri: ${SERVICE_SCHEME}://${LEGAL_CASE_HOST}:${LEGAL_CASE_PORT}
 
 auth-server-uri: ${AUTH_SERVER}
 
@@ -135,6 +136,22 @@ spring:
             filters:
               - TokenRelay=
               - StripPrefix=2
+          
+          # LegalCase OpenApi Route Configuration
+          - id: legalcase_openapi_route
+            uri: ${legal-case-uri}
+            predicates:
+              - Path=/api/legalcase/v3/**, /api/legalcase/swagger-ui/**
+            filters:
+
+          # Storage Api Route Configuration
+          - id: legalcase_route
+            uri: ${legal-case-uri}
+            predicates:
+              - Path=/api/legalcase/**
+            filters:
+              - TokenRelay=
+              - StripPrefix=2
 
   data:
     redis:
@@ -156,6 +173,11 @@ spring:
             authorization-grant-type: authorization_code
             redirect-uri: "${AUTH_CLIENT}/login/oauth2/code/{registrationId}"
             scope: openid,profile,email
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${AUTH_SERVER}/oauth2/jwks
+          issuer-uri: ${AUTH_SERVER}
+
 
 management:
   endpoints:
@@ -191,6 +213,8 @@ springdoc:
         url: /api/ai/v3/api-docs
       - name: core-messaging-service
         url: /api/messaging/v3/api-docs
+      - name: legal-case-service
+        url: /api/legalcase/v3/api-docs
 
 logging:
   level:
