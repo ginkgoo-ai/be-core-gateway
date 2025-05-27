@@ -112,7 +112,7 @@ public class SecurityConfig {
         ShareCodeTokenResponseClient tokenResponseClient = new ShareCodeTokenResponseClient();
 
         ShareCodeAuthenticationFilter shareCodeFilter = new ShareCodeAuthenticationFilter(
-				clientRegistrationRepository, authorizedClientService, tokenResponseClient, "ginkgoo-web-client",
+				clientRegistrationRepository, authorizedClientService, tokenResponseClient, "ginkgoo-bff-client",
 				appBaseUri);
 
 		// Create token enabled check filter to verify if user accounts are enabled
@@ -147,7 +147,7 @@ public class SecurityConfig {
 				.authorizationEndpoint(authorization -> authorization
 					.authorizationRequestResolver(new ShareCodeAuthorizationRequestResolver(
                                                 clientRegistrationRepository,
-							"/oauth2/authorization", "ginkgoo-web-client"))
+							"/oauth2/authorization", "ginkgoo-bff-client"))
 
                         )
                         .tokenEndpoint(token -> token
@@ -233,7 +233,7 @@ public class SecurityConfig {
 
     private AuthenticationEntryPoint authenticationEntryPoint() {
 		AuthenticationEntryPoint authenticationEntryPoint = new LoginUrlAuthenticationEntryPoint(
-				"/oauth2/authorization/ginkgoo-web-client");
+				"/oauth2/authorization/ginkgoo-bff-client");
         MediaTypeRequestMatcher textHtmlMatcher = new MediaTypeRequestMatcher(MediaType.TEXT_HTML);
         textHtmlMatcher.setUseEquals(true);
 

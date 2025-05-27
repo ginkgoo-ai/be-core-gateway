@@ -110,7 +110,7 @@ public class ShareCodeAuthenticationFilter extends AbstractAuthenticationProcess
             
             OAuth2AuthorizedClient authorizedClient = new OAuth2AuthorizedClient(
                     clientRegistration,
-                "ginkgoo-web-client",
+					"ginkgoo-bff-client",
                     tokenResponse.getAccessToken(),
                     tokenResponse.getRefreshToken()
             );

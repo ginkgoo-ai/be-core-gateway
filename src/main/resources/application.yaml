@@ -166,7 +166,7 @@ spring:
           core-identity:
             issuer-uri: ${AUTH_SERVER}
         registration:
-          ginkgoo-web-client:
+          ginkgoo-bff-client:
             provider: core-identity
             client-id: ginkgoo-bff-client
             client-secret: ${CLIENT_SECRET}
