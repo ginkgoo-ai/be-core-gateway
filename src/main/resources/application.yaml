@@ -168,7 +168,7 @@ spring:
         registration:
           ginkgoo-web-client:
             provider: core-identity
-            client-id: ginkgoo-web-client
+            client-id: ginkgoo-bff-client
             client-secret: ${CLIENT_SECRET}
             authorization-grant-type: authorization_code
             redirect-uri: "${AUTH_CLIENT}/login/oauth2/code/{registrationId}"
