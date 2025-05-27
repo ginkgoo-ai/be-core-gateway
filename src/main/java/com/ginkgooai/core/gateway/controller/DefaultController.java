@@ -51,7 +51,7 @@ public class DefaultController {
 			session.setAttribute("redirectUri", appBaseUri);
 		}
 		log.debug("login with redirectUri:{}", redirectUri);
-		return "redirect:/oauth2/authorization/ginkgoo-web-client";
+		return "redirect:/oauth2/authorization/ginkgoo-bff-client";
 	}
 
 	@GetMapping("/")
