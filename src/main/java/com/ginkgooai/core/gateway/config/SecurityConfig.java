@@ -167,9 +167,8 @@ public class SecurityConfig {
 			.oauth2Client(oauth2Client -> oauth2Client.authorizationCodeGrant(
 					codeGrant -> codeGrant.authorizationRequestResolver(authorizationRequestResolver)
 						.authorizationRequestRepository(authorizationRequestRepository())))
-			// .oauth2ResourceServer(
-			// oauth2 -> oauth2.jwt(jwt ->
-			// jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())))
+			.oauth2ResourceServer(
+					oauth2 -> oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())))
 			.addFilterBefore(shareCodeFilter, UsernamePasswordAuthenticationFilter.class)
 			.addFilterAfter(tokenEnabledCheckFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
