@@ -16,7 +16,18 @@ public class CachingRequestBodyFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
-        boolean webhook = request.getRequestURI().contains("webhook");
+
+		// Skip caching for SSE stream endpoints to avoid interfering with streaming
+		String requestUri = request.getRequestURI();
+		boolean isSSEStream = requestUri.contains("/stream");
+
+		if (isSSEStream) {
+			log.debug("Skipping request body caching for SSE stream endpoint: {}", requestUri);
+			filterChain.doFilter(request, response);
+			return;
+		}
+
+		boolean webhook = requestUri.contains("webhook");
         if(webhook){
             Enumeration<String> headerNames = request.getHeaderNames();
             while(headerNames.hasMoreElements()){
@@ -25,7 +36,6 @@ public class CachingRequestBodyFilter extends OncePerRequestFilter {
                 log.info("Header: {} = {}", headerName, headerValue);
             }
         }
-
 
         CachedBodyHttpServletRequest cachedBodyRequest = new CachedBodyHttpServletRequest(request);
         filterChain.doFilter(cachedBodyRequest, response);

@@ -77,7 +77,11 @@ public class GlobalRateLimitFilter extends OncePerRequestFilter {
         return path.startsWith("/actuator") ||
             path.startsWith("/swagger") ||
             path.startsWith("/health") ||
-            path.startsWith("/v3/api-docs");
+				path.startsWith("/v3/api-docs") || path.endsWith("/stream"); // Skip rate
+																				// limiting
+																				// for SSE
+																				// stream
+																				// endpoints
     }
 
     private String resolveKey(HttpServletRequest request) {

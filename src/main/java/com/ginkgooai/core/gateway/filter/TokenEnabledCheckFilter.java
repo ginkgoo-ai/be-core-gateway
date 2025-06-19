@@ -83,7 +83,8 @@ public class TokenEnabledCheckFilter extends OncePerRequestFilter {
 	private boolean shouldSkip(HttpServletRequest request) {
 		String path = request.getRequestURI();
 		return path.startsWith("/authorized") || path.startsWith("/login") || path.startsWith("/api/workspace")
-				|| path.startsWith("/api/identity/") || path.startsWith("/api/storage/v1/files");
+				|| path.startsWith("/api/identity/") || path.startsWith("/api/storage/v1/files")
+				|| path.endsWith("/stream"); // Skip token check for SSE stream endpoints
 	}
 
 	private boolean checkTokenEnabled(OAuth2AuthenticationToken oauthToken) {

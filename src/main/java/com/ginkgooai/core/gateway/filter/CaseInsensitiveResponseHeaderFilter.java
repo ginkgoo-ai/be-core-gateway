@@ -1,6 +1,7 @@
 package com.ginkgooai.core.gateway.filter;
 
 import jakarta.servlet.*;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpServletResponseWrapper;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +24,17 @@ public class CaseInsensitiveResponseHeaderFilter implements Filter {
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
+		// Skip for SSE stream endpoints to avoid interfering with streaming headers
+		if (request instanceof HttpServletRequest) {
+			HttpServletRequest httpRequest = (HttpServletRequest) request;
+			String requestUri = httpRequest.getRequestURI();
+			if (requestUri.endsWith("/stream")) {
+				log.debug("Skipping header processing for SSE stream endpoint: {}", requestUri);
+				chain.doFilter(request, response);
+				return;
+			}
+		}
+        
         if (response instanceof HttpServletResponse) {
             HttpServletResponse originalResponse = (HttpServletResponse) response;
             CaseInsensitiveResponseHeaderWrapper responseWrapper = new CaseInsensitiveResponseHeaderWrapper(originalResponse);

@@ -42,7 +42,7 @@ public class LoggingFilter implements Filter {
             "/v3/api-docs",
             "/favicon.ico",
             "/static",
-            "/webjars"
+			"/webjars", "/stream" // Exclude SSE stream endpoints
     );
 
     @Override
@@ -51,11 +51,14 @@ public class LoggingFilter implements Filter {
         HttpServletRequest httpRequest = (HttpServletRequest) request;
         HttpServletResponse httpResponse = (HttpServletResponse) response;
 
-        if (shouldExclude(httpRequest.getRequestURI())) {
+		String requestUri = httpRequest.getRequestURI();
+
+		// Skip logging for SSE stream endpoints and other excluded paths
+		if (shouldExclude(requestUri) || isSSEStream(requestUri)) {
+			log.debug("Skipping logging for path: {}", requestUri);
             chain.doFilter(request, response);
             return;
         }
-
 
         ContentCachingRequestWrapper requestWrapper = new ContentCachingRequestWrapper(httpRequest);
         ContentCachingResponseWrapper responseWrapper = new ContentCachingResponseWrapper(httpResponse);
@@ -74,6 +77,10 @@ public class LoggingFilter implements Filter {
     private boolean shouldExclude(String uri) {
         return EXCLUDE_PATHS.stream().anyMatch(uri::startsWith);
     }
+
+	private boolean isSSEStream(String uri) {
+		return uri.endsWith("/stream");
+	}
 
     private void logApiInfo(ContentCachingRequestWrapper request, ContentCachingResponseWrapper response, long timeElapsed) {
         try {
