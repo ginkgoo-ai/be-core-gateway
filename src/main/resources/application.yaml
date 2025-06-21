@@ -120,6 +120,7 @@ spring:
             filters:
               - TokenRelay=
               - StripPrefix=2
+              - RewritePath=/workflows, /workflows/
 
           # Messaging OpenApi Route Configuration
           - id: messaging_openapi_route
